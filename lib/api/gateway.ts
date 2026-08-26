@@ -11,12 +11,7 @@ const baseHeaders: Record<string, string> = {
 const baseURL = (typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL : '') || 'https://api.makemypresence.com';
 
 function normalizeUrl(url: string): string {
-  const fullUrl = url.startsWith('http') ? url : `${baseURL}${url}`;
-  const urlObj = new URL(fullUrl, baseURL);
-  if (!urlObj.pathname.endsWith('/')) {
-    urlObj.pathname += '/';
-  }
-  return urlObj.toString();
+  return url.startsWith('http') ? url : `${baseURL}${url}`;
 }
 
 async function handleResponse<T>(response: Response): Promise<T> {
