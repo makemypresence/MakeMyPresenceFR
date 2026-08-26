@@ -8,7 +8,10 @@ const baseHeaders: Record<string, string> = {
   Product: 'MakeMyPresence',
 };
 
-const baseURL = (typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL : '') || 'https://api.makemypresence.com';
+const baseURL =
+  (typeof process !== 'undefined'
+    ? process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL
+    : '') || 'https://api.makemypresence.com';
 
 function normalizeUrl(url: string): string {
   return url.startsWith('http') ? url : `${baseURL}${url}`;
@@ -90,7 +93,7 @@ export const privateGateway = {
 
 async function privateFetch<T>(url: string, options: RequestInit): Promise<T> {
   const accessToken = storage.getAccessToken();
-  
+
   const headers = {
     ...baseHeaders,
     ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
@@ -109,10 +112,10 @@ async function privateFetch<T>(url: string, options: RequestInit): Promise<T> {
       const refreshToken = storage.getRefreshToken();
       const refreshRes = await publicGateway.post<{ response: { access_token: string } }>(
         authUrls.getAccessToken,
-        { refresh_token: refreshToken }
+        { refresh_token: refreshToken },
       );
       const newAccessToken = refreshRes.response.access_token;
-      
+
       storage.setAccessToken(newAccessToken);
 
       const retryHeaders = {

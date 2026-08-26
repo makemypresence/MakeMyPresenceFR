@@ -30,5 +30,5 @@ export const storage = {
   },
   isAuthenticated(): boolean {
     return !!this.getAccessToken();
-  }
+  },
 };

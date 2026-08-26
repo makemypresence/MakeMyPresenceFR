@@ -28,7 +28,7 @@ export const blockService = {
   async createBlock(payload: CreateBlockPayload): Promise<BlockDetails> {
     const data = await privateGateway.post<{ response: BlockDetails }>(
       blockUrls.createBlock,
-      payload
+      payload,
     );
     return data.response;
   },
@@ -36,16 +36,14 @@ export const blockService = {
   // Lists all blocks inside a specific profile
   async listAllBlocks(profileId: string): Promise<BlockDetails[]> {
     const data = await privateGateway.get<{ response: BlockDetails[] }>(
-      blockUrls.listAllBlocks(profileId)
+      blockUrls.listAllBlocks(profileId),
     );
     return data.response || [];
   },
 
   // Retrieves details of a specific block by its ID
   async getBlock(blockId: string): Promise<BlockDetails> {
-    const data = await privateGateway.get<{ response: BlockDetails }>(
-      blockUrls.getBlock(blockId)
-    );
+    const data = await privateGateway.get<{ response: BlockDetails }>(blockUrls.getBlock(blockId));
     return data.response;
   },
 
@@ -53,7 +51,7 @@ export const blockService = {
   async updateBlock(blockId: string, payload: Partial<CreateBlockPayload>): Promise<BlockDetails> {
     const data = await privateGateway.put<{ response: BlockDetails }>(
       blockUrls.updateBlock(blockId),
-      payload
+      payload,
     );
     return data.response;
   },

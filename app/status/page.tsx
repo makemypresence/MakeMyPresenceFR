@@ -14,10 +14,14 @@ interface HealthCheckResult {
 export default function StatusPage() {
   // Pre-populate 90 bars of history with green (healthy)
   const [apiHistory, setApiHistory] = useState<HealthCheckResult[]>(
-    Array(90).fill(null).map(() => ({ status: 'green', responseTime: 0.1 + Math.random() * 0.4 }))
+    Array(90)
+      .fill(null)
+      .map(() => ({ status: 'green', responseTime: 0.1 + Math.random() * 0.4 })),
   );
   const [dbHistory, setDbHistory] = useState<HealthCheckResult[]>(
-    Array(90).fill(null).map(() => ({ status: 'green', responseTime: 0.15 + Math.random() * 0.4 }))
+    Array(90)
+      .fill(null)
+      .map(() => ({ status: 'green', responseTime: 0.15 + Math.random() * 0.4 })),
   );
 
   const [currentApiTime, setCurrentApiTime] = useState<number | null>(null);
@@ -106,7 +110,10 @@ export default function StatusPage() {
     <main className="flex min-h-screen flex-col bg-[#191c1e] text-[#e3e2e6] relative font-sans p-6 md:p-12">
       {/* Back Button */}
       <div className="mb-8">
-        <Link href="/" className="inline-flex items-center space-x-2 text-sm text-[#a4a9ae] hover:text-white transition-colors">
+        <Link
+          href="/"
+          className="inline-flex items-center space-x-2 text-sm text-[#a4a9ae] hover:text-white transition-colors"
+        >
           <svg
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
@@ -130,15 +137,31 @@ export default function StatusPage() {
         >
           {isAllSystemsOperational ? (
             <>
-              <svg className="w-6 h-6 shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <svg
+                className="w-6 h-6 shrink-0"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                viewBox="0 0 24 24"
+              >
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
               </svg>
               <span>All Systems Operational</span>
             </>
           ) : (
             <>
-              <svg className="w-6 h-6 shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+              <svg
+                className="w-6 h-6 shrink-0"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
+                />
               </svg>
               <span>System Outage / Degraded Performance</span>
             </>
@@ -162,9 +185,16 @@ export default function StatusPage() {
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-medium text-white flex items-center space-x-1.5">
                 <span>API Requests</span>
-                <span className="text-xs text-[#8a9196] bg-[#2d3236] px-1.5 py-0.5 rounded-md cursor-help" title="Checks backend HTTP latency">?</span>
+                <span
+                  className="text-xs text-[#8a9196] bg-[#2d3236] px-1.5 py-0.5 rounded-md cursor-help"
+                  title="Checks backend HTTP latency"
+                >
+                  ?
+                </span>
               </h2>
-              <div className={`w-3.5 h-3.5 rounded-full ${getBarColorClass(apiHistory[apiHistory.length - 1].status)}`} />
+              <div
+                className={`w-3.5 h-3.5 rounded-full ${getBarColorClass(apiHistory[apiHistory.length - 1].status)}`}
+              />
             </div>
 
             {/* Vertical Bars Visualization */}
@@ -173,17 +203,19 @@ export default function StatusPage() {
                 <div
                   key={idx}
                   className={`w-full hover:scale-y-110 transition-all rounded-sm duration-150 group relative cursor-pointer ${getBarColorClass(
-                    item.status
+                    item.status,
                   )}`}
                   style={{
                     height: item.status === 'yellow' ? '90%' : '100%',
                     // Adjust width slightly if it's yellow or custom styling
-                    opacity: item.status === 'yellow' ? 0.9 : 1
+                    opacity: item.status === 'yellow' ? 0.9 : 1,
                   }}
                 >
                   {/* Tooltip */}
                   <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-[#191c1e] text-xs text-white p-2 rounded-md shadow-lg border border-[#2d3236] whitespace-nowrap z-10">
-                    <div className="capitalize font-semibold text-zinc-300">Status: {item.status}</div>
+                    <div className="capitalize font-semibold text-zinc-300">
+                      Status: {item.status}
+                    </div>
                     <div>Latency: {item.responseTime.toFixed(3)}s</div>
                   </div>
                 </div>
@@ -192,7 +224,9 @@ export default function StatusPage() {
 
             <div className="flex items-center justify-between text-xs text-[#8a9196] border-t border-[#2d3236] pt-3">
               <span>{getTimeLabel(liveChecksCount)}</span>
-              <span className="font-medium text-zinc-300">{getUptimePercent(apiHistory)}% uptime</span>
+              <span className="font-medium text-zinc-300">
+                {getUptimePercent(apiHistory)}% uptime
+              </span>
               <span>Today</span>
             </div>
 
@@ -206,9 +240,16 @@ export default function StatusPage() {
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-medium text-white flex items-center space-x-1.5">
                 <span>Database</span>
-                <span className="text-xs text-[#8a9196] bg-[#2d3236] px-1.5 py-0.5 rounded-md cursor-help" title="Checks database health and availability">?</span>
+                <span
+                  className="text-xs text-[#8a9196] bg-[#2d3236] px-1.5 py-0.5 rounded-md cursor-help"
+                  title="Checks database health and availability"
+                >
+                  ?
+                </span>
               </h2>
-              <div className={`w-3.5 h-3.5 rounded-full ${getBarColorClass(dbHistory[dbHistory.length - 1].status)}`} />
+              <div
+                className={`w-3.5 h-3.5 rounded-full ${getBarColorClass(dbHistory[dbHistory.length - 1].status)}`}
+              />
             </div>
 
             {/* Vertical Bars Visualization */}
@@ -217,16 +258,18 @@ export default function StatusPage() {
                 <div
                   key={idx}
                   className={`w-full hover:scale-y-110 transition-all rounded-sm duration-150 group relative cursor-pointer ${getBarColorClass(
-                    item.status
+                    item.status,
                   )}`}
                   style={{
                     height: item.status === 'yellow' ? '90%' : '100%',
-                    opacity: item.status === 'yellow' ? 0.9 : 1
+                    opacity: item.status === 'yellow' ? 0.9 : 1,
                   }}
                 >
                   {/* Tooltip */}
                   <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-[#191c1e] text-xs text-white p-2 rounded-md shadow-lg border border-[#2d3236] whitespace-nowrap z-10">
-                    <div className="capitalize font-semibold text-zinc-300">Status: {item.status}</div>
+                    <div className="capitalize font-semibold text-zinc-300">
+                      Status: {item.status}
+                    </div>
                     <div>Latency: {item.responseTime.toFixed(3)}s</div>
                   </div>
                 </div>
@@ -235,7 +278,9 @@ export default function StatusPage() {
 
             <div className="flex items-center justify-between text-xs text-[#8a9196] border-t border-[#2d3236] pt-3">
               <span>{getTimeLabel(liveChecksCount)}</span>
-              <span className="font-medium text-zinc-300">{getUptimePercent(dbHistory)}% uptime</span>
+              <span className="font-medium text-zinc-300">
+                {getUptimePercent(dbHistory)}% uptime
+              </span>
               <span>Today</span>
             </div>
 

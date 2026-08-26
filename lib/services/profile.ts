@@ -22,7 +22,7 @@ export const profileService = {
   async createProfile(payload: CreateProfilePayload): Promise<ProfileDetails> {
     const data = await privateGateway.post<{ response: ProfileDetails }>(
       profileUrls.createProfile,
-      payload
+      payload,
     );
     return data.response;
   },
@@ -30,7 +30,7 @@ export const profileService = {
   // Lists all profiles belonging to the authenticated user
   async listAllProfiles(): Promise<ProfileDetails[]> {
     const data = await privateGateway.get<{ response: ProfileDetails[] }>(
-      profileUrls.listAllProfiles
+      profileUrls.listAllProfiles,
     );
     return data.response || [];
   },
@@ -38,7 +38,7 @@ export const profileService = {
   // Retrieves details of a specific profile (includes its blocks)
   async getProfile(profileId: string): Promise<ProfileDetails> {
     const data = await privateGateway.get<{ response: ProfileDetails }>(
-      profileUrls.getProfile(profileId)
+      profileUrls.getProfile(profileId),
     );
     return data.response;
   },
@@ -47,7 +47,7 @@ export const profileService = {
   async updateProfile(profileId: string, payload: CreateProfilePayload): Promise<ProfileDetails> {
     const data = await privateGateway.put<{ response: ProfileDetails }>(
       profileUrls.updateProfile(profileId),
-      payload
+      payload,
     );
     return data.response;
   },
