@@ -3,9 +3,14 @@
 interface BottomControlsProps {
   showSuggestions: boolean;
   onToggleSuggestions: () => void;
+  onAddBlock: (type: string, title: string) => void;
 }
 
-export function BottomControls({ showSuggestions, onToggleSuggestions }: BottomControlsProps) {
+export function BottomControls({
+  showSuggestions,
+  onToggleSuggestions,
+  onAddBlock,
+}: BottomControlsProps) {
   return (
     <footer className="absolute bottom-6 left-6 right-6 flex items-center justify-between pointer-events-none z-30">
       {/* Bottom Left controls */}
@@ -25,6 +30,7 @@ export function BottomControls({ showSuggestions, onToggleSuggestions }: BottomC
       <div className="bg-white/95 backdrop-blur border border-[#e1e3e5] rounded-3xl p-2 flex items-center space-x-2 shadow-2xl pointer-events-auto">
         {/* 1. Add Link */}
         <button
+          onClick={() => onAddBlock('link', 'New Link')}
           className="p-3 hover:bg-zinc-100 rounded-2xl transition-all cursor-pointer"
           title="Add Link"
         >
@@ -37,6 +43,7 @@ export function BottomControls({ showSuggestions, onToggleSuggestions }: BottomC
 
         {/* 2. Section Title */}
         <button
+          onClick={() => onAddBlock('title', 'New Title')}
           className="p-3 hover:bg-zinc-100 rounded-2xl transition-all cursor-pointer"
           title="Section Title"
         >
@@ -49,6 +56,7 @@ export function BottomControls({ showSuggestions, onToggleSuggestions }: BottomC
 
         {/* 3. Text */}
         <button
+          onClick={() => onAddBlock('text', 'New Text')}
           className="p-3 hover:bg-zinc-100 rounded-2xl transition-all cursor-pointer"
           title="Text"
         >
@@ -61,6 +69,7 @@ export function BottomControls({ showSuggestions, onToggleSuggestions }: BottomC
 
         {/* 4. Add Image/Video */}
         <button
+          onClick={() => onAddBlock('image', 'New Image')}
           className="p-3 hover:bg-zinc-100 rounded-2xl transition-all cursor-pointer"
           title="Add Image/Video"
         >
@@ -73,6 +82,7 @@ export function BottomControls({ showSuggestions, onToggleSuggestions }: BottomC
 
         {/* 5. Add Tiles */}
         <button
+          onClick={() => onAddBlock('tile', 'New Tile')}
           className="p-3 hover:bg-zinc-100 rounded-2xl transition-all cursor-pointer"
           title="Add Tiles"
         >

@@ -9,6 +9,7 @@ import { ProfileEditor } from '../../components/editor/ProfileEditor';
 import { BlockCard } from '../../components/editor/BlockCard';
 import { SuggestionCard } from '../../components/editor/SuggestionCard';
 import { BottomControls } from '../../components/editor/BottomControls';
+import { DEFAULT_BLOCK_DIMENSIONS } from '../../lib/utils/dimensions';
 
 export default function EditorPage() {
   const router = useRouter();
@@ -25,6 +26,8 @@ export default function EditorPage() {
   const [showSuggestions, setShowSuggestions] = useState(true);
   const [displayUrl, setDisplayUrl] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [deletedBlockIds, setDeletedBlockIds] = useState<string[]>([]);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
   useEffect(() => {
     // Dynamic domain URL setup
@@ -52,8 +55,6 @@ export default function EditorPage() {
         activeProfile = await profileService.createProfile({
           display_name: 'Your name',
           bio: 'Your bio...',
-          theme_id: 'default',
-          is_published: true,
         });
         setProfiles([activeProfile]);
       } else {
@@ -88,58 +89,121 @@ export default function EditorPage() {
     }
   };
 
-  // Save profile changes
+  // Save profile and synchronize blocks changes
   const handleSave = async () => {
     if (!profile) return;
     setIsSaving(true);
     try {
+      // 1. Save profile details
       const updated = await profileService.updateProfile(profile.id, {
         display_name: displayName,
         bio: bio,
       });
       setProfile(updated);
       setProfiles((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+
+      // 2. Sync deleted blocks
+      for (const id of deletedBlockIds) {
+        await blockService.deleteBlock(id);
+      }
+      setDeletedBlockIds([]);
+
+      // 3. Sync created/updated blocks
+      const syncedBlocks: BlockDetails[] = [];
+      for (const block of blocks) {
+        if (block.id.startsWith('temp-')) {
+          // Create block on server
+          const newBlock = await blockService.createBlock({
+            profile_id: profile.id,
+            type: block.type,
+            title: block.title,
+            url: block.url,
+            position: block.position,
+            layout: block.layout,
+          });
+          syncedBlocks.push(newBlock);
+        } else {
+          // Keep existing block
+          syncedBlocks.push(block);
+        }
+      }
+      setBlocks(syncedBlocks);
     } catch (err) {
-      console.error('Failed to save profile:', err);
+      console.error('Failed to save changes:', err);
     } finally {
       setIsSaving(false);
     }
   };
 
-  // Create block from suggestion
-  const handleAddBlock = async (type: string, title: string) => {
+  // Add block locally with a temporary ID
+  const handleAddBlock = (type: string, title: string) => {
     if (!profile) return;
-    try {
-      const newBlock = await blockService.createBlock({
-        profile_id: profile.id,
-        type,
-        title,
-        url: 'https://',
-        position: blocks.length + 1,
-      });
-      setBlocks((prev) => [...prev, newBlock]);
-    } catch (err) {
-      console.error('Failed to create block:', err);
-    }
+    const defaultDim = DEFAULT_BLOCK_DIMENSIONS[type] || { w: 2, h: 2 };
+    const hVal = defaultDim.h === 'infinite' ? 2 : defaultDim.h;
+
+    const tempBlock: BlockDetails = {
+      id: `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      profile_id: profile.id,
+      type,
+      title,
+      url: 'https://',
+      position: blocks.length + 1,
+      layout: {
+        desktop: { w: defaultDim.w, h: hVal },
+        mobile: { w: defaultDim.w, h: hVal },
+      },
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    setBlocks((prev) => [...prev, tempBlock]);
   };
 
-  // Delete an existing block
-  const handleDeleteBlock = async (blockId: string) => {
-    try {
-      await blockService.deleteBlock(blockId);
-      setBlocks((prev) => prev.filter((b) => b.id !== blockId));
-    } catch (err) {
-      console.error('Failed to delete block:', err);
+  // Delete block locally, tracking DB IDs for synchronization on Save click
+  const handleDeleteBlock = (blockId: string) => {
+    if (!blockId.startsWith('temp-')) {
+      setDeletedBlockIds((prev) => [...prev, blockId]);
     }
+    setBlocks((prev) => prev.filter((b) => b.id !== blockId));
+  };
+
+  // Drag and Drop arrangement handlers
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e: React.DragEvent, targetIndex: number) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === targetIndex) return;
+
+    const reordered = [...blocks];
+    const [movedItem] = reordered.splice(draggedIndex, 1);
+    reordered.splice(targetIndex, 0, movedItem);
+
+    // Update positions
+    const updated = reordered.map((item, idx) => ({
+      ...item,
+      position: idx + 1,
+    }));
+    setBlocks(updated);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
   };
 
   // Suggestion Blocks structure
   const suggestions = [
-    { type: 'link', title: 'Add Link', widthClass: 'w-full md:w-1/3' },
-    { type: 'image', title: 'Add Image', widthClass: 'w-full md:w-1/2' },
-    { type: 'link', title: 'Add Link', widthClass: 'w-full md:w-1/3' },
-    { type: 'spotify', title: 'Add Spotify', widthClass: 'w-full md:w-1/2' },
-    { type: 'youtube', title: 'Add Youtube', widthClass: 'w-full md:w-1/2' },
+    { type: 'title', title: 'Add Title', colSpan: 'col-span-4' },
+    { type: 'link', title: 'Add Link', colSpan: 'col-span-1' },
+    { type: 'image', title: 'Add Image', colSpan: 'col-span-2' },
+    { type: 'link', title: 'Add Link', colSpan: 'col-span-1' },
+    { type: 'spotify', title: 'Add Spotify', colSpan: 'col-span-2' },
+    { type: 'youtube', title: 'Add Youtube', colSpan: 'col-span-2' },
   ];
 
   return (
@@ -154,20 +218,23 @@ export default function EditorPage() {
       />
 
       {/* Main Workspace */}
-      <div className="flex-1 max-w-7xl w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 px-6 py-8 overflow-hidden">
-        <ProfileEditor
-          displayName={displayName}
-          bio={bio}
-          onDisplayNameChange={(val) => {
-            setDisplayName(val);
-          }}
-          onBioChange={(val) => {
-            setBio(val);
-          }}
-        />
+      <div className="flex-1 w-full grid grid-cols-1 lg:grid-cols-3 gap-8 py-8 overflow-hidden">
+        {/* Left Column (1/3) */}
+        <div className="lg:col-span-1 h-full overflow-y-auto pr-2">
+          <ProfileEditor
+            displayName={displayName}
+            bio={bio}
+            onDisplayNameChange={(val) => {
+              setDisplayName(val);
+            }}
+            onBioChange={(val) => {
+              setBio(val);
+            }}
+          />
+        </div>
 
-        {/* Right column: Blocks layout editor */}
-        <div className="lg:col-span-8 space-y-6 pb-36 h-full overflow-y-auto pr-2">
+        {/* Right column: Blocks layout editor (2/3) */}
+        <div className="lg:col-span-2 space-y-6 pb-36 h-full overflow-y-auto pr-2 max-w-[980px] w-full px-5">
           {/* Add a Title Input */}
           <div className="w-full pb-2">
             <input
@@ -180,13 +247,19 @@ export default function EditorPage() {
           </div>
 
           {/* Grid Layout containing active blocks + suggestions */}
-          <div className="flex flex-wrap gap-6 items-start w-full">
+          <div className="grid grid-cols-1 md:grid-cols-[repeat(4,215px)] gap-0 w-full items-start">
             {/* 1. Saved/Active Blocks */}
-            {blocks.map((block) => (
+            {blocks.map((block, idx) => (
               <BlockCard
                 key={block.id}
                 block={block}
                 onDelete={handleDeleteBlock}
+                draggable
+                onDragStart={(e) => handleDragStart(e, idx)}
+                onDragOver={(e) => handleDragOver(e, idx)}
+                onDrop={(e) => handleDrop(e, idx)}
+                onDragEnd={handleDragEnd}
+                isDragging={draggedIndex === idx}
               />
             ))}
 
@@ -197,7 +270,7 @@ export default function EditorPage() {
                   key={`suggest-${idx}`}
                   type={s.type}
                   title={s.title}
-                  widthClass={s.widthClass}
+                  colSpan={s.colSpan}
                   onAdd={handleAddBlock}
                 />
               ))}
@@ -208,6 +281,7 @@ export default function EditorPage() {
       <BottomControls
         showSuggestions={showSuggestions}
         onToggleSuggestions={() => setShowSuggestions(!showSuggestions)}
+        onAddBlock={handleAddBlock}
       />
     </main>
   );

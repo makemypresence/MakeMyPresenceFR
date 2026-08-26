@@ -14,7 +14,7 @@ export function ProfileEditor({
   onBioChange,
 }: ProfileEditorProps) {
   return (
-    <div className="lg:col-span-4 flex flex-col items-center text-center space-y-6 pt-6">
+    <div className="w-full flex flex-col items-center text-center space-y-6 pt-6">
       {/* Large Avatar preview */}
       <div className="w-44 h-44 rounded-full overflow-hidden bg-zinc-100 flex items-center justify-center border-4 border-white shadow-xl">
         {/* Image Placeholder */}
