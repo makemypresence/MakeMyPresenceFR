@@ -50,8 +50,8 @@ export const authService = {
   // Checks if a username is available
   async checkUsername(username: string): Promise<boolean> {
     const url = `${authUrls.checkUsername}?username=${encodeURIComponent(username)}`;
-    const data = await publicGateway.get<{ response: { is_available: boolean } }>(url);
-    return data.response?.is_available ?? false;
+    const data = await publicGateway.get<{ response: { available: boolean } }>(url);
+    return data.response?.available ?? false;
   },
 
   // Checks API health status
