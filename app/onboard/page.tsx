@@ -9,8 +9,15 @@ export default function OnboardPage() {
   const [isChecking, setIsChecking] = useState(false);
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
 
-  const frontendUrl = process.env.NEXT_PUBLIC_FRONTEND_URL || 'own.page';
-  const displayUrl = frontendUrl.replace(/https?:\/\//, '').replace(/\/$/, '');
+  const [displayUrl, setDisplayUrl] = useState('');
+
+  useEffect(() => {
+    const frontendUrl =
+      process.env.NEXT_PUBLIC_FRONTEND_URL ||
+      (typeof window !== 'undefined' ? window.location.host : '');
+    const cleanUrl = frontendUrl.replace(/https?:\/\//, '').replace(/\/$/, '');
+    setDisplayUrl(cleanUrl);
+  }, []);
 
   useEffect(() => {
     if (!username.trim()) {
