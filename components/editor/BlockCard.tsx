@@ -6,6 +6,7 @@ import { getBoxDimensions, DEFAULT_BLOCK_DIMENSIONS } from '../../lib/utils/dime
 interface BlockCardProps {
   block: BlockDetails;
   onDelete: (id: string) => void;
+  onUpdate?: (id: string, updates: Partial<BlockDetails>) => void;
   draggable?: boolean;
   onDragStart?: (e: React.DragEvent) => void;
   onDragOver?: (e: React.DragEvent) => void;
@@ -17,6 +18,7 @@ interface BlockCardProps {
 export function BlockCard({
   block,
   onDelete,
+  onUpdate,
   draggable,
   onDragStart,
   onDragOver,
@@ -24,9 +26,9 @@ export function BlockCard({
   onDragEnd,
   isDragging,
 }: BlockCardProps) {
-  // Get width/height unit configuration from layout metadata or fall back to defaults
   const w = block.layout?.desktop?.w || DEFAULT_BLOCK_DIMENSIONS[block.type]?.w || 2;
   const h = block.layout?.desktop?.h || DEFAULT_BLOCK_DIMENSIONS[block.type]?.h || 2;
+  const isInputBlock = block.type === 'title' || block.type === 'text' || block.type === 'link' || block.type === 'image';
 
   // Resolve pixel boundaries from dimensions utility
   const dims = getBoxDimensions(w, h);
@@ -42,6 +44,14 @@ export function BlockCard({
     width: `${dims.innerWidth}px`,
     height: dims.innerHeight === 'infinite' ? 'auto' : `${dims.innerHeight}px`,
     minHeight: dims.innerHeight === 'infinite' ? '67.5px' : undefined,
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const localUrl = URL.createObjectURL(file);
+      onUpdate?.(block.id, { image_url: localUrl, title: file.name });
+    }
   };
 
   return (
@@ -60,101 +70,113 @@ export function BlockCard({
       {/* Inner Div with dynamic bounds */}
       <div
         style={innerStyle}
-        className="bg-white border border-[#e1e3e5] rounded-[20px] p-0 relative flex items-center justify-center shadow-sm hover:border-[#191c1e] transition-colors"
+        className="bg-white border border-[#e1e3e5] rounded-[14px] p-0 relative flex items-center justify-center shadow-sm transition-colors"
       >
         {/* Delete Button (Placed inside Inner Div, relative to it) */}
         <button
           onClick={() => onDelete(block.id)}
-          className="absolute -top-1.5 -right-1.5 p-1 bg-white hover:bg-red-50 text-zinc-400 hover:text-red-500 rounded-full border border-zinc-200 shadow-sm transition-colors cursor-pointer z-10"
+          className="absolute -top-2.5 -left-2.5 p-[10px] bg-white hover:bg-zinc-50 text-zinc-400 hover:text-black rounded-full border border-zinc-200 shadow-sm opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto transition-opacity duration-200 cursor-pointer z-10"
           title="Delete Block"
         >
-          <svg
-            className="w-3.5 h-3.5"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"
-            />
-          </svg>
+          <img
+            src="/images/svg/icons/trash.svg"
+            alt="Delete Block"
+            className="w-5 h-5"
+          />
         </button>
 
         {/* Block Content (Centered inside Inner Div) */}
-        <div className="flex items-center space-x-2 px-3 py-1 w-full justify-start overflow-hidden">
-          <div className="p-1.5 bg-zinc-50 rounded-lg border border-zinc-100 shrink-0">
-            {/* Render dynamic icon per type */}
-            {block.type === 'link' && (
-              <svg
-                className="w-4 h-4 text-[#5a626a]"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244"
+        {block.type === 'title' || block.type === 'link' ? (
+          <div className="flex items-center px-[10px] w-full justify-start overflow-hidden">
+            <input
+              type="text"
+              value={block.title || ''}
+              onChange={(e) => onUpdate?.(block.id, { title: e.target.value })}
+              placeholder={block.type === 'title' ? 'Add Title' : 'New Link'}
+              style={{
+                height:
+                  dims.innerHeight === 'infinite'
+                    ? 'auto'
+                    : `${dims.innerHeight - 16}px`,
+              }}
+              className="w-full bg-transparent group-hover:bg-zinc-100 focus:bg-zinc-100 text-[#191c1e] rounded-[14px] px-4 text-[20px] font-semibold border-none outline-none transition-colors duration-200"
+            />
+          </div>
+        ) : block.type === 'text' ? (
+          <div className="flex items-center px-[10px] py-[8px] w-full h-full overflow-hidden">
+            <textarea
+              value={block.title || ''}
+              onChange={(e) => onUpdate?.(block.id, { title: e.target.value })}
+              placeholder="New Text"
+              style={{ height: '159px' }}
+              className="w-full bg-transparent group-hover:bg-zinc-100 focus:bg-zinc-100 text-[#191c1e] rounded-[14px] p-4 text-[20px] font-semibold border-none outline-none resize-none transition-colors duration-200"
+            />
+          </div>
+        ) : block.type === 'image' ? (
+          <div className="flex items-center justify-center p-[10px] w-full h-full overflow-hidden">
+            {block.image_url ? (
+              <div className="relative w-full h-full rounded-[10px] overflow-hidden group/img">
+                <img
+                  src={block.image_url}
+                  alt={block.title || 'Uploaded Image'}
+                  className="w-full h-full object-cover"
                 />
-              </svg>
-            )}
-            {block.type === 'image' && (
-              <svg
-                className="w-4 h-4 text-[#5a626a]"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 flex items-center justify-center space-x-2 transition-opacity duration-200 rounded-[10px]">
+                  <label className="text-white text-xs font-semibold px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-xl backdrop-blur cursor-pointer">
+                    Change Image
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="hidden"
+                    />
+                  </label>
+                  <button
+                    onClick={() => onUpdate?.(block.id, { image_url: '', title: '' })}
+                    className="text-white text-xs font-semibold px-3 py-1.5 bg-white/20 hover:bg-red-500/80 rounded-xl backdrop-blur cursor-pointer"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <label className="flex flex-col items-center justify-center w-full h-full bg-transparent group-hover:bg-zinc-100 rounded-[10px] cursor-pointer transition-colors duration-200 px-4">
+                <div className="flex flex-col items-center justify-center space-y-2">
+                  <img
+                    src="/images/svg/icons/upload.svg"
+                    alt="Upload"
+                    className="w-8 h-8 opacity-60"
+                  />
+                  <span className="text-[20px] font-semibold text-[#8a9196] text-center">
+                    Upload Image
+                  </span>
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className="hidden"
                 />
-              </svg>
-            )}
-            {block.type === 'spotify' && (
-              <svg
-                className="w-4 h-4 text-[#5a626a]"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M9 9l10.5-3m0 0v5.625M19 6v12a3 3 0 11-6-0M9 9v12a3 3 0 11-6-0m6-12V6a3 3 0 013-3h7a3 3 0 013 3v3"
-                />
-              </svg>
-            )}
-            {block.type === 'youtube' && (
-              <svg
-                className="w-4 h-4 text-[#5a626a]"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M15.91 11.672a.375.375 0 010 .656l-5.603 3.113a.375.375 0 01-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112z"
-                />
-              </svg>
+              </label>
             )}
           </div>
-          <span className="font-semibold text-[#191c1e] text-xs truncate">{block.title}</span>
-        </div>
+        ) : (
+          <div className="flex items-center px-[10px] w-full justify-start overflow-hidden">
+            <div
+              style={{
+                height:
+                  dims.innerHeight === 'infinite'
+                    ? 'auto'
+                    : `${dims.innerHeight - 16}px`,
+              }}
+              className="w-full bg-transparent group-hover:bg-zinc-100 flex items-center px-4 rounded-[14px] transition-colors duration-200"
+            >
+              <span className={`font-semibold text-[20px] truncate ${block.title ? 'text-[#191c1e]' : 'text-[#8a9196]'}`}>
+                {block.title || 'New Tile'}
+              </span>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

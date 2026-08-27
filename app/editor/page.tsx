@@ -123,8 +123,14 @@ export default function EditorPage() {
           });
           syncedBlocks.push(newBlock);
         } else {
-          // Keep existing block
-          syncedBlocks.push(block);
+          // Update existing block on server to save any changes (e.g. edited title)
+          const updatedBlock = await blockService.updateBlock(block.id, {
+            title: block.title,
+            url: block.url,
+            position: block.position,
+            layout: block.layout,
+          });
+          syncedBlocks.push(updatedBlock);
         }
       }
       setBlocks(syncedBlocks);
@@ -141,11 +147,13 @@ export default function EditorPage() {
     const defaultDim = DEFAULT_BLOCK_DIMENSIONS[type] || { w: 2, h: 2 };
     const hVal = defaultDim.h === 'infinite' ? 2 : defaultDim.h;
 
+    const isInputBlock = type === 'title' || type === 'text' || type === 'link' || type === 'tile';
+
     const tempBlock: BlockDetails = {
       id: `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       profile_id: profile.id,
       type,
-      title,
+      title: isInputBlock ? '' : title,
       url: 'https://',
       position: blocks.length + 1,
       layout: {
@@ -164,6 +172,13 @@ export default function EditorPage() {
       setDeletedBlockIds((prev) => [...prev, blockId]);
     }
     setBlocks((prev) => prev.filter((b) => b.id !== blockId));
+  };
+
+  // Update block properties locally
+  const handleUpdateBlock = (blockId: string, updates: Partial<BlockDetails>) => {
+    setBlocks((prev) =>
+      prev.map((b) => (b.id === blockId ? { ...b, ...updates } : b))
+    );
   };
 
   // Drag and Drop arrangement handlers
@@ -254,6 +269,7 @@ export default function EditorPage() {
                 key={block.id}
                 block={block}
                 onDelete={handleDeleteBlock}
+                onUpdate={handleUpdateBlock}
                 draggable
                 onDragStart={(e) => handleDragStart(e, idx)}
                 onDragOver={(e) => handleDragOver(e, idx)}
