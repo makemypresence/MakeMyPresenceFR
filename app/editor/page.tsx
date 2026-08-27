@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { profileService, ProfileDetails } from '../../lib/services/profile';
 import { blockService, BlockDetails } from '../../lib/services/block';
@@ -9,7 +9,7 @@ import { ProfileEditor } from '../../components/editor/ProfileEditor';
 import { BlockCard } from '../../components/editor/BlockCard';
 import { SuggestionCard } from '../../components/editor/SuggestionCard';
 import { BottomControls } from '../../components/editor/BottomControls';
-import { DEFAULT_BLOCK_DIMENSIONS } from '../../lib/utils/dimensions';
+import { DEFAULT_BLOCK_DIMENSIONS, getBoxDimensions } from '../../lib/utils/dimensions';
 
 export default function EditorPage() {
   const router = useRouter();
@@ -28,6 +28,8 @@ export default function EditorPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [deletedBlockIds, setDeletedBlockIds] = useState<string[]>([]);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const dragActiveRef = useRef(false);
 
   useEffect(() => {
     // Dynamic domain URL setup
@@ -183,16 +185,28 @@ export default function EditorPage() {
 
   // Drag and Drop arrangement handlers
   const handleDragStart = (e: React.DragEvent, index: number) => {
-    setDraggedIndex(index);
     e.dataTransfer.effectAllowed = 'move';
+    dragActiveRef.current = true;
+    setTimeout(() => {
+      if (dragActiveRef.current) {
+        setDraggedIndex(index);
+      }
+    }, 0);
   };
 
   const handleDragOver = (e: React.DragEvent, index: number) => {
     e.preventDefault();
+    if (draggedIndex === index) return;
+    setDragOverIndex(index);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverIndex(null);
   };
 
   const handleDrop = (e: React.DragEvent, targetIndex: number) => {
     e.preventDefault();
+    setDragOverIndex(null);
     if (draggedIndex === null || draggedIndex === targetIndex) return;
 
     const reordered = [...blocks];
@@ -208,7 +222,105 @@ export default function EditorPage() {
   };
 
   const handleDragEnd = () => {
+    dragActiveRef.current = false;
     setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  // Helper type for drag-and-drop placeholder grids
+  interface GridItem {
+    type: 'block' | 'empty';
+    block?: BlockDetails;
+    index?: number;
+    insertIndex?: number;
+    w: number;
+    h: number | 'infinite';
+  }
+
+  // Generate grid items including empty slot placeholders for drag-and-drop
+  const getGridItems = (): GridItem[] => {
+    const items: GridItem[] = [];
+    if (draggedIndex === null) return [];
+
+    const draggedBlock = blocks[draggedIndex];
+    const dragW = draggedBlock.layout?.desktop?.w || DEFAULT_BLOCK_DIMENSIONS[draggedBlock.type]?.w || 2;
+    const dragH = draggedBlock.layout?.desktop?.h || DEFAULT_BLOCK_DIMENSIONS[draggedBlock.type]?.h || 2;
+
+    // Start with a placeholder at the very beginning (position 0)
+    items.push({
+      type: 'empty',
+      w: dragW,
+      h: dragH,
+      insertIndex: 0,
+    });
+    
+    let currentColumn = dragW;
+
+    blocks.forEach((block, idx) => {
+      if (idx === draggedIndex) return;
+      const w = block.layout?.desktop?.w || DEFAULT_BLOCK_DIMENSIONS[block.type]?.w || 2;
+      
+      // If it doesn't fit in the current row:
+      if (currentColumn + w > 4) {
+        const remainingSpace = 4 - currentColumn;
+        if (remainingSpace >= dragW) {
+          items.push({
+            type: 'empty',
+            w: dragW,
+            h: dragH,
+            insertIndex: idx,
+          });
+        }
+        currentColumn = 0;
+      }
+
+      items.push({
+        type: 'block',
+        block,
+        index: idx,
+        w,
+        h: block.layout?.desktop?.h || DEFAULT_BLOCK_DIMENSIONS[block.type]?.h || 2,
+      });
+
+      currentColumn += w;
+      if (currentColumn === 4) {
+        currentColumn = 0;
+      }
+    });
+
+    // Always append an empty placeholder at the end of the grid items
+    items.push({
+      type: 'empty',
+      w: dragW,
+      h: dragH,
+      insertIndex: blocks.length,
+    });
+
+    return items;
+  };
+
+  // Move dragged block to an empty slot position
+  const handleDropOnEmpty = (insertIndex: number) => {
+    if (draggedIndex === null) return;
+    
+    const reordered = [...blocks];
+    const [movedItem] = reordered.splice(draggedIndex, 1);
+    
+    let finalInsertIndex = insertIndex;
+    if (draggedIndex < insertIndex) {
+      finalInsertIndex = insertIndex - 1;
+    }
+    
+    reordered.splice(finalInsertIndex, 0, movedItem);
+
+    // Update positions
+    const updated = reordered.map((item, idx) => ({
+      ...item,
+      position: idx + 1,
+    }));
+    setBlocks(updated);
+    setDraggedIndex(null);
+    setDragOverIndex(null);
   };
 
   // Suggestion Blocks structure
@@ -263,24 +375,72 @@ export default function EditorPage() {
 
           {/* Grid Layout containing active blocks + suggestions */}
           <div className="grid grid-cols-1 md:grid-cols-[repeat(4,215px)] gap-0 w-full items-start">
-            {/* 1. Saved/Active Blocks */}
-            {blocks.map((block, idx) => (
-              <BlockCard
-                key={block.id}
-                block={block}
-                onDelete={handleDeleteBlock}
-                onUpdate={handleUpdateBlock}
-                draggable
-                onDragStart={(e) => handleDragStart(e, idx)}
-                onDragOver={(e) => handleDragOver(e, idx)}
-                onDrop={(e) => handleDrop(e, idx)}
-                onDragEnd={handleDragEnd}
-                isDragging={draggedIndex === idx}
-              />
-            ))}
+            {/* 1. Saved/Active Blocks & Drag Placeholders */}
+            {draggedIndex !== null
+              ? getGridItems().map((item, idx) => {
+                  if (item.type === 'block') {
+                    return (
+                      <BlockCard
+                        key={item.block!.id}
+                        block={item.block!}
+                        onDelete={handleDeleteBlock}
+                        onUpdate={handleUpdateBlock}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, item.index!)}
+                        onDragOver={(e) => handleDragOver(e, item.index!)}
+                        onDragLeave={handleDragLeave}
+                        onDrop={(e) => handleDrop(e, item.index!)}
+                        onDragEnd={handleDragEnd}
+                        isDragging={draggedIndex === item.index}
+                        isDragOver={dragOverIndex === item.index}
+                      />
+                    );
+                  } else {
+                    // Empty drop zone placeholder slot matching drag dimensions
+                    const dims = getBoxDimensions(item.w, item.h);
+                    const isOver = dragOverIndex === -(idx + 1);
+                    return (
+                      <div
+                        key={`empty-${idx}`}
+                        style={{ height: dims.outerHeight === 'infinite' ? 'auto' : `${dims.outerHeight}px` }}
+                        className={`col-span-${item.w} w-full flex items-center justify-center`}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          setDragOverIndex(-(idx + 1));
+                        }}
+                        onDragLeave={handleDragLeave}
+                        onDrop={() => handleDropOnEmpty(item.insertIndex!)}
+                      >
+                        <div
+                          style={{
+                            width: `${dims.innerWidth}px`,
+                            height: dims.innerHeight === 'infinite' ? 'auto' : `${dims.innerHeight}px`,
+                          }}
+                          className="rounded-[14px] transition-all duration-200 bg-zinc-100/50 border-transparent shadow-[inset_0_2px_5px_rgba(0,0,0,0.08)]"
+                        />
+                      </div>
+                    );
+                  }
+                })
+              : blocks.map((block, idx) => (
+                  <BlockCard
+                    key={block.id}
+                    block={block}
+                    onDelete={handleDeleteBlock}
+                    onUpdate={handleUpdateBlock}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, idx)}
+                    onDragOver={(e) => handleDragOver(e, idx)}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, idx)}
+                    onDragEnd={handleDragEnd}
+                    isDragging={draggedIndex === idx}
+                    isDragOver={dragOverIndex === idx}
+                  />
+                ))}
 
-            {/* 2. Suggestion Placeholders (shown when showSuggestions is true) */}
-            {showSuggestions &&
+            {/* 2. Suggestion Placeholders (shown when showSuggestions is true and not dragging) */}
+            {showSuggestions && draggedIndex === null &&
               suggestions.map((s, idx) => (
                 <SuggestionCard
                   key={`suggest-${idx}`}
