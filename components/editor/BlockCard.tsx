@@ -1,5 +1,8 @@
 'use client';
 
+import { useState } from 'react';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { BlockDetails } from '../../lib/services/block';
 import { getBoxDimensions, DEFAULT_BLOCK_DIMENSIONS } from '../../lib/utils/dimensions';
 
@@ -7,29 +10,27 @@ interface BlockCardProps {
   block: BlockDetails;
   onDelete: (id: string) => void;
   onUpdate?: (id: string, updates: Partial<BlockDetails>) => void;
-  draggable?: boolean;
-  onDragStart?: (e: React.DragEvent) => void;
-  onDragOver?: (e: React.DragEvent) => void;
-  onDragLeave?: (e: React.DragEvent) => void;
-  onDrop?: (e: React.DragEvent) => void;
-  onDragEnd?: () => void;
-  isDragging?: boolean;
-  isDragOver?: boolean;
+  isOverlay?: boolean;
 }
 
 export function BlockCard({
   block,
   onDelete,
   onUpdate,
-  draggable,
-  onDragStart,
-  onDragOver,
-  onDragLeave,
-  onDrop,
-  onDragEnd,
-  isDragging,
-  isDragOver,
+  isOverlay = false,
 }: BlockCardProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+    over,
+  } = useSortable({ id: block.id, disabled: isOverlay });
+
+  const isOver = over && over.id === block.id;
+
   const w = block.layout?.desktop?.w || DEFAULT_BLOCK_DIMENSIONS[block.type]?.w || 2;
   const h = block.layout?.desktop?.h || DEFAULT_BLOCK_DIMENSIONS[block.type]?.h || 2;
   const isInputBlock = block.type === 'title' || block.type === 'text' || block.type === 'link' || block.type === 'image';
@@ -42,6 +43,8 @@ export function BlockCard({
   const outerStyle = {
     height: dims.outerHeight === 'infinite' ? 'auto' : `${dims.outerHeight}px`,
     minHeight: dims.outerHeight === 'infinite' ? '107.5px' : undefined,
+    transform: CSS.Transform.toString(transform),
+    transition,
   };
 
   const innerStyle = {
@@ -60,27 +63,40 @@ export function BlockCard({
 
   const showPlaceholder = isDragging;
 
+  if (block.type === 'spacer') {
+    return (
+      <div
+        ref={setNodeRef}
+        style={outerStyle}
+        className={`relative ${colSpan} group w-full flex items-center justify-center transition-all duration-200 ${
+          isDragging ? 'scale-95 z-20 opacity-50' : ''
+        }`}
+      >
+        <div
+          style={innerStyle}
+          className={`rounded-[14px] p-0 relative flex items-center justify-center transition-all duration-200 border-2 border-dashed border-zinc-200 bg-zinc-50/20 w-full h-full ${
+            isOver ? 'border-zinc-400 bg-zinc-100/50' : ''
+          }`}
+        />
+      </div>
+    );
+  }
+
   return (
     // Outer Div (flex centered)
     <div
+      ref={setNodeRef}
       style={outerStyle}
-      draggable={draggable}
-      onDragStart={onDragStart}
-      onDragOver={onDragOver}
-      onDragLeave={onDragLeave}
-      onDrop={onDrop}
-      onDragEnd={onDragEnd}
-      className={`relative ${colSpan} group w-full flex items-center justify-center cursor-grab active:cursor-grabbing transition-all duration-200 ${
-        isDragging ? 'scale-95 z-20' : ''
+      className={`relative ${colSpan} group w-full flex items-center justify-center transition-all duration-200 ${
+        isDragging ? 'scale-95 z-20 opacity-50' : ''
       }`}
     >
-      {/* Inner Div with dynamic bounds */}
       <div
         style={innerStyle}
         className={`rounded-[14px] p-0 relative flex items-center justify-center transition-all duration-200 border w-full h-full ${
           isDragging
             ? 'bg-zinc-100/50 border-transparent shadow-[inset_0_2px_5px_rgba(0,0,0,0.08)]'
-            : isDragOver
+            : isOver
             ? 'bg-white border-zinc-400 shadow-md scale-[1.02] z-10'
             : 'bg-white border-[#e1e3e5] shadow-sm'
         }`}
@@ -99,6 +115,23 @@ export function BlockCard({
                 className="w-5 h-5"
               />
             </button>
+
+            {/* Drag Handle Grip (Placed inside Inner Div, top-right overlay) */}
+            <div
+              {...attributes}
+              {...listeners}
+              className="absolute -top-2.5 -right-2.5 p-[10px] bg-white hover:bg-zinc-50 text-zinc-400 hover:text-black rounded-full border border-zinc-200 shadow-sm opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-200 cursor-grab active:cursor-grabbing z-10 flex items-center justify-center w-[42px] h-[42px]"
+              title="Drag to Reorder"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <circle cx="9" cy="6" r="1.25" fill="currentColor" />
+                <circle cx="9" cy="12" r="1.25" fill="currentColor" />
+                <circle cx="9" cy="18" r="1.25" fill="currentColor" />
+                <circle cx="15" cy="6" r="1.25" fill="currentColor" />
+                <circle cx="15" cy="12" r="1.25" fill="currentColor" />
+                <circle cx="15" cy="18" r="1.25" fill="currentColor" />
+              </svg>
+            </div>
 
             {/* Block Content (Centered inside Inner Div) */}
             {block.type === 'title' || block.type === 'link' ? (

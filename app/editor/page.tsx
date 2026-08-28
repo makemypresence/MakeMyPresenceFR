@@ -2,6 +2,25 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+  useDroppable,
+  DragOverlay,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  rectSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { profileService, ProfileDetails } from '../../lib/services/profile';
 import { blockService, BlockDetails } from '../../lib/services/block';
 import { EditorHeader } from '../../components/editor/EditorHeader';
@@ -10,6 +29,64 @@ import { BlockCard } from '../../components/editor/BlockCard';
 import { SuggestionCard } from '../../components/editor/SuggestionCard';
 import { BottomControls } from '../../components/editor/BottomControls';
 import { DEFAULT_BLOCK_DIMENSIONS, getBoxDimensions } from '../../lib/utils/dimensions';
+const fillSpacers = (existingBlocks: BlockDetails[]): BlockDetails[] => {
+  const result: BlockDetails[] = [];
+  let currentColumn = 0;
+
+  // Filter out any existing spacers first to avoid duplicate spacers
+  const nonSpacers = existingBlocks.filter(b => b.type !== 'spacer');
+
+  nonSpacers.forEach((block) => {
+    const w = block.layout?.desktop?.w || DEFAULT_BLOCK_DIMENSIONS[block.type]?.w || 2;
+    
+    // If it doesn't fit in the current row:
+    if (currentColumn + w > 4) {
+      const remainingSpace = 4 - currentColumn;
+      for (let k = 0; k < remainingSpace; k++) {
+        result.push({
+          id: `spacer-${Date.now()}-${Math.random().toString(36).substr(2, 9)}-${k}`,
+          profile_id: '',
+          type: 'spacer',
+          position: result.length + 1,
+          layout: {
+            desktop: { w: 1, h: 2 },
+            mobile: { w: 1, h: 2 },
+          },
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+      }
+      currentColumn = 0;
+    }
+
+    result.push(block);
+    currentColumn += w;
+    if (currentColumn === 4) {
+      currentColumn = 0;
+    }
+  });
+
+  // Fill the remaining space of the last row
+  if (currentColumn > 0) {
+    const remainingSpace = 4 - currentColumn;
+    for (let k = 0; k < remainingSpace; k++) {
+      result.push({
+        id: `spacer-${Date.now()}-${Math.random().toString(36).substr(2, 9)}-end-${k}`,
+        profile_id: '',
+        type: 'spacer',
+        position: result.length + 1,
+        layout: {
+          desktop: { w: 1, h: 2 },
+          mobile: { w: 1, h: 2 },
+        },
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
+    }
+  }
+
+  return result;
+};
 
 export default function EditorPage() {
   const router = useRouter();
@@ -27,9 +104,14 @@ export default function EditorPage() {
   const [displayUrl, setDisplayUrl] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [deletedBlockIds, setDeletedBlockIds] = useState<string[]>([]);
-  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
-  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
-  const dragActiveRef = useRef(false);
+  const [activeId, setActiveId] = useState<string | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   useEffect(() => {
     // Dynamic domain URL setup
@@ -73,7 +155,7 @@ export default function EditorPage() {
 
       // 2. Load blocks belonging to active profile
       const activeBlocks = await blockService.listAllBlocks(activeProfile.id);
-      setBlocks(activeBlocks);
+      setBlocks(fillSpacers(activeBlocks));
     } catch (err) {
       console.error('Failed to load editor data:', err);
     }
@@ -87,7 +169,7 @@ export default function EditorPage() {
       setDisplayName(selected.display_name || '');
       setBio(selected.bio || '');
       const activeBlocks = await blockService.listAllBlocks(selected.id);
-      setBlocks(activeBlocks);
+      setBlocks(fillSpacers(activeBlocks));
     }
   };
 
@@ -112,7 +194,8 @@ export default function EditorPage() {
 
       // 3. Sync created/updated blocks
       const syncedBlocks: BlockDetails[] = [];
-      for (const block of blocks) {
+      const nonSpacers = blocks.filter((b) => b.type !== 'spacer');
+      for (const block of nonSpacers) {
         if (block.id.startsWith('temp-')) {
           // Create block on server
           const newBlock = await blockService.createBlock({
@@ -135,7 +218,7 @@ export default function EditorPage() {
           syncedBlocks.push(updatedBlock);
         }
       }
-      setBlocks(syncedBlocks);
+      setBlocks(fillSpacers(syncedBlocks));
     } catch (err) {
       console.error('Failed to save changes:', err);
     } finally {
@@ -165,7 +248,7 @@ export default function EditorPage() {
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
-    setBlocks((prev) => [...prev, tempBlock]);
+    setBlocks((prev) => fillSpacers([...prev.filter(b => b.type !== 'spacer'), tempBlock]));
   };
 
   // Delete block locally, tracking DB IDs for synchronization on Save click
@@ -173,7 +256,7 @@ export default function EditorPage() {
     if (!blockId.startsWith('temp-')) {
       setDeletedBlockIds((prev) => [...prev, blockId]);
     }
-    setBlocks((prev) => prev.filter((b) => b.id !== blockId));
+    setBlocks((prev) => fillSpacers(prev.filter((b) => b.id !== blockId && b.type !== 'spacer')));
   };
 
   // Update block properties locally
@@ -183,144 +266,38 @@ export default function EditorPage() {
     );
   };
 
-  // Drag and Drop arrangement handlers
-  const handleDragStart = (e: React.DragEvent, index: number) => {
-    e.dataTransfer.effectAllowed = 'move';
-    dragActiveRef.current = true;
-    setTimeout(() => {
-      if (dragActiveRef.current) {
-        setDraggedIndex(index);
-      }
-    }, 0);
+
+
+  // Drag and Drop arrangement handlers using @dnd-kit
+  const handleDragStart = (event: any) => {
+    setActiveId(event.active.id);
   };
 
-  const handleDragOver = (e: React.DragEvent, index: number) => {
-    e.preventDefault();
-    if (draggedIndex === index) return;
-    setDragOverIndex(index);
-  };
+  const handleDragOver = (event: any) => {
+    const { active, over } = event;
+    if (!over) return;
 
-  const handleDragLeave = () => {
-    setDragOverIndex(null);
-  };
+    const activeIdStr = active.id as string;
+    const overIdStr = over.id as string;
 
-  const handleDrop = (e: React.DragEvent, targetIndex: number) => {
-    e.preventDefault();
-    setDragOverIndex(null);
-    if (draggedIndex === null || draggedIndex === targetIndex) return;
-
-    const reordered = [...blocks];
-    const [movedItem] = reordered.splice(draggedIndex, 1);
-    reordered.splice(targetIndex, 0, movedItem);
-
-    // Update positions
-    const updated = reordered.map((item, idx) => ({
-      ...item,
-      position: idx + 1,
-    }));
-    setBlocks(updated);
+    if (activeIdStr !== overIdStr) {
+      setBlocks((prev) => {
+        const oldIndex = prev.findIndex((item) => item.id === activeIdStr);
+        const newIndex = prev.findIndex((item) => item.id === overIdStr);
+        if (oldIndex !== -1 && newIndex !== -1) {
+          const reordered = arrayMove(prev, oldIndex, newIndex);
+          return reordered.map((item, idx) => ({
+            ...item,
+            position: idx + 1,
+          }));
+        }
+        return prev;
+      });
+    }
   };
 
   const handleDragEnd = () => {
-    dragActiveRef.current = false;
-    setDraggedIndex(null);
-    setDragOverIndex(null);
-  };
-
-  // Helper type for drag-and-drop placeholder grids
-  interface GridItem {
-    type: 'block' | 'empty';
-    block?: BlockDetails;
-    index?: number;
-    insertIndex?: number;
-    w: number;
-    h: number | 'infinite';
-  }
-
-  // Generate grid items including empty slot placeholders for drag-and-drop
-  const getGridItems = (): GridItem[] => {
-    const items: GridItem[] = [];
-    if (draggedIndex === null) return [];
-
-    const draggedBlock = blocks[draggedIndex];
-    const dragW = draggedBlock.layout?.desktop?.w || DEFAULT_BLOCK_DIMENSIONS[draggedBlock.type]?.w || 2;
-    const dragH = draggedBlock.layout?.desktop?.h || DEFAULT_BLOCK_DIMENSIONS[draggedBlock.type]?.h || 2;
-
-    // Start with a placeholder at the very beginning (position 0)
-    items.push({
-      type: 'empty',
-      w: dragW,
-      h: dragH,
-      insertIndex: 0,
-    });
-    
-    let currentColumn = dragW;
-
-    blocks.forEach((block, idx) => {
-      if (idx === draggedIndex) return;
-      const w = block.layout?.desktop?.w || DEFAULT_BLOCK_DIMENSIONS[block.type]?.w || 2;
-      
-      // If it doesn't fit in the current row:
-      if (currentColumn + w > 4) {
-        const remainingSpace = 4 - currentColumn;
-        if (remainingSpace >= dragW) {
-          items.push({
-            type: 'empty',
-            w: dragW,
-            h: dragH,
-            insertIndex: idx,
-          });
-        }
-        currentColumn = 0;
-      }
-
-      items.push({
-        type: 'block',
-        block,
-        index: idx,
-        w,
-        h: block.layout?.desktop?.h || DEFAULT_BLOCK_DIMENSIONS[block.type]?.h || 2,
-      });
-
-      currentColumn += w;
-      if (currentColumn === 4) {
-        currentColumn = 0;
-      }
-    });
-
-    // Always append an empty placeholder at the end of the grid items
-    items.push({
-      type: 'empty',
-      w: dragW,
-      h: dragH,
-      insertIndex: blocks.length,
-    });
-
-    return items;
-  };
-
-  // Move dragged block to an empty slot position
-  const handleDropOnEmpty = (insertIndex: number) => {
-    if (draggedIndex === null) return;
-    
-    const reordered = [...blocks];
-    const [movedItem] = reordered.splice(draggedIndex, 1);
-    
-    let finalInsertIndex = insertIndex;
-    if (draggedIndex < insertIndex) {
-      finalInsertIndex = insertIndex - 1;
-    }
-    
-    reordered.splice(finalInsertIndex, 0, movedItem);
-
-    // Update positions
-    const updated = reordered.map((item, idx) => ({
-      ...item,
-      position: idx + 1,
-    }));
-    setBlocks(updated);
-    setDraggedIndex(null);
-    setDragOverIndex(null);
+    setActiveId(null);
   };
 
   // Suggestion Blocks structure
@@ -375,72 +352,42 @@ export default function EditorPage() {
 
           {/* Grid Layout containing active blocks + suggestions */}
           <div className="grid grid-cols-1 md:grid-cols-[repeat(4,215px)] gap-0 w-full items-start">
-            {/* 1. Saved/Active Blocks & Drag Placeholders */}
-            {draggedIndex !== null
-              ? getGridItems().map((item, idx) => {
-                  if (item.type === 'block') {
-                    return (
-                      <BlockCard
-                        key={item.block!.id}
-                        block={item.block!}
-                        onDelete={handleDeleteBlock}
-                        onUpdate={handleUpdateBlock}
-                        draggable
-                        onDragStart={(e) => handleDragStart(e, item.index!)}
-                        onDragOver={(e) => handleDragOver(e, item.index!)}
-                        onDragLeave={handleDragLeave}
-                        onDrop={(e) => handleDrop(e, item.index!)}
-                        onDragEnd={handleDragEnd}
-                        isDragging={draggedIndex === item.index}
-                        isDragOver={dragOverIndex === item.index}
-                      />
-                    );
-                  } else {
-                    // Empty drop zone placeholder slot matching drag dimensions
-                    const dims = getBoxDimensions(item.w, item.h);
-                    const isOver = dragOverIndex === -(idx + 1);
-                    return (
-                      <div
-                        key={`empty-${idx}`}
-                        style={{ height: dims.outerHeight === 'infinite' ? 'auto' : `${dims.outerHeight}px` }}
-                        className={`col-span-${item.w} w-full flex items-center justify-center`}
-                        onDragOver={(e) => {
-                          e.preventDefault();
-                          setDragOverIndex(-(idx + 1));
-                        }}
-                        onDragLeave={handleDragLeave}
-                        onDrop={() => handleDropOnEmpty(item.insertIndex!)}
-                      >
-                        <div
-                          style={{
-                            width: `${dims.innerWidth}px`,
-                            height: dims.innerHeight === 'infinite' ? 'auto' : `${dims.innerHeight}px`,
-                          }}
-                          className="rounded-[14px] transition-all duration-200 bg-zinc-100/50 border-transparent shadow-[inset_0_2px_5px_rgba(0,0,0,0.08)]"
-                        />
-                      </div>
-                    );
-                  }
-                })
-              : blocks.map((block, idx) => (
+            {/* 1. Saved/Active Blocks */}
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragStart={handleDragStart}
+              onDragOver={handleDragOver}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={blocks.map((block) => block.id)}
+                strategy={rectSortingStrategy}
+              >
+                {blocks.map((block) => (
                   <BlockCard
                     key={block.id}
                     block={block}
                     onDelete={handleDeleteBlock}
                     onUpdate={handleUpdateBlock}
-                    draggable
-                    onDragStart={(e) => handleDragStart(e, idx)}
-                    onDragOver={(e) => handleDragOver(e, idx)}
-                    onDragLeave={handleDragLeave}
-                    onDrop={(e) => handleDrop(e, idx)}
-                    onDragEnd={handleDragEnd}
-                    isDragging={draggedIndex === idx}
-                    isDragOver={dragOverIndex === idx}
                   />
                 ))}
+              </SortableContext>
+
+              <DragOverlay>
+                {activeId ? (
+                  <BlockCard
+                    block={blocks.find((b) => b.id === activeId)!}
+                    onDelete={handleDeleteBlock}
+                    onUpdate={handleUpdateBlock}
+                    isOverlay
+                  />
+                ) : null}
+              </DragOverlay>
+            </DndContext>
 
             {/* 2. Suggestion Placeholders (shown when showSuggestions is true and not dragging) */}
-            {showSuggestions && draggedIndex === null &&
+            {showSuggestions && activeId === null &&
               suggestions.map((s, idx) => (
                 <SuggestionCard
                   key={`suggest-${idx}`}
