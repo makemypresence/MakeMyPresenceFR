@@ -27,7 +27,14 @@ export function BlockCard({
     transition,
     isDragging,
     over,
-  } = useSortable({ id: block.id, disabled: isOverlay });
+  } = useSortable({
+    id: block.id,
+    disabled: isOverlay,
+    transition: {
+      duration: 300,
+      easing: 'cubic-bezier(0.2, 0, 0, 1)',
+    },
+  });
 
   const isOver = over && over.id === block.id;
 
@@ -43,7 +50,7 @@ export function BlockCard({
   const outerStyle = {
     height: dims.outerHeight === 'infinite' ? 'auto' : `${dims.outerHeight}px`,
     minHeight: dims.outerHeight === 'infinite' ? '107.5px' : undefined,
-    transform: CSS.Transform.toString(transform),
+    transform: isDragging ? undefined : CSS.Transform.toString(transform),
     transition,
   };
 
@@ -74,8 +81,10 @@ export function BlockCard({
       >
         <div
           style={innerStyle}
-          className={`rounded-[14px] p-0 relative flex items-center justify-center transition-all duration-200 border-2 border-dashed border-zinc-200 bg-zinc-50/20 w-full h-full ${
-            isOver ? 'border-zinc-400 bg-zinc-100/50' : ''
+          className={`rounded-[14px] p-0 relative flex items-center justify-center transition-all duration-200 w-full h-full ${
+            isOver
+              ? 'bg-zinc-100/50'
+              : 'bg-white'
           }`}
         />
       </div>
@@ -96,8 +105,6 @@ export function BlockCard({
         className={`rounded-[14px] p-0 relative flex items-center justify-center transition-all duration-200 border w-full h-full ${
           isDragging
             ? 'bg-zinc-100/50 border-transparent shadow-[inset_0_2px_5px_rgba(0,0,0,0.08)]'
-            : isOver
-            ? 'bg-white border-zinc-400 shadow-md scale-[1.02] z-10'
             : 'bg-white border-[#e1e3e5] shadow-sm'
         }`}
       >
@@ -140,7 +147,7 @@ export function BlockCard({
                   type="text"
                   value={block.title || ''}
                   onChange={(e) => onUpdate?.(block.id, { title: e.target.value })}
-                  placeholder={block.type === 'title' ? 'Add Title' : 'New Link'}
+                  placeholder={block.type === 'title' ? 'Add Title' : 'Add Link'}
                   style={{
                     height:
                       dims.innerHeight === 'infinite'
@@ -155,7 +162,7 @@ export function BlockCard({
                 <textarea
                   value={block.title || ''}
                   onChange={(e) => onUpdate?.(block.id, { title: e.target.value })}
-                  placeholder="New Text"
+                  placeholder="Add Text"
                   style={{ height: '159px' }}
                   className="w-full bg-transparent group-hover:bg-zinc-100 focus:bg-zinc-100 text-[#191c1e] rounded-[14px] p-4 text-[20px] font-semibold border-none outline-none resize-none transition-colors duration-200"
                 />
@@ -192,11 +199,11 @@ export function BlockCard({
                     <div className="flex flex-col items-center justify-center space-y-2">
                       <img
                         src="/images/svg/icons/upload.svg"
-                        alt="Upload"
+                        alt="Add Image"
                         className="w-8 h-8 opacity-60"
                       />
                       <span className="text-[20px] font-semibold text-[#8a9196] text-center">
-                        Upload Image
+                        Add Image
                       </span>
                     </div>
                     <input
@@ -220,7 +227,7 @@ export function BlockCard({
                   className="w-full bg-transparent group-hover:bg-zinc-100 flex items-center px-4 rounded-[14px] transition-colors duration-200"
                 >
                   <span className={`font-semibold text-[20px] truncate ${block.title ? 'text-[#191c1e]' : 'text-[#8a9196]'}`}>
-                    {block.title || 'New Tile'}
+                    {block.title || 'Add Tile'}
                   </span>
                 </div>
               </div>

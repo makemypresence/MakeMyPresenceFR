@@ -30,7 +30,7 @@ export function BottomControls({
       <div className="bg-white/95 backdrop-blur border border-[#e1e3e5] rounded-3xl p-2 flex items-center space-x-2 shadow-2xl pointer-events-auto">
         {/* 1. Add Link */}
         <button
-          onClick={() => onAddBlock('link', 'New Link')}
+          onClick={() => onAddBlock('link', 'Add Link')}
           className="p-3 hover:bg-zinc-100 rounded-2xl transition-all cursor-pointer"
           title="Add Link"
         >
@@ -43,7 +43,7 @@ export function BottomControls({
 
         {/* 2. Section Title */}
         <button
-          onClick={() => onAddBlock('title', 'New Title')}
+          onClick={() => onAddBlock('title', 'Add Title')}
           className="p-3 hover:bg-zinc-100 rounded-2xl transition-all cursor-pointer"
           title="Section Title"
         >
@@ -56,7 +56,7 @@ export function BottomControls({
 
         {/* 3. Text */}
         <button
-          onClick={() => onAddBlock('text', 'New Text')}
+          onClick={() => onAddBlock('text', 'Add Text')}
           className="p-3 hover:bg-zinc-100 rounded-2xl transition-all cursor-pointer"
           title="Text"
         >
@@ -69,7 +69,7 @@ export function BottomControls({
 
         {/* 4. Add Image/Video */}
         <button
-          onClick={() => onAddBlock('image', 'New Image')}
+          onClick={() => onAddBlock('image', 'Add Image')}
           className="p-3 hover:bg-zinc-100 rounded-2xl transition-all cursor-pointer"
           title="Add Image/Video"
         >
@@ -82,7 +82,7 @@ export function BottomControls({
 
         {/* 5. Add Tiles */}
         <button
-          onClick={() => onAddBlock('tile', 'New Tile')}
+          onClick={() => onAddBlock('tile', 'Add Tile')}
           className="p-3 hover:bg-zinc-100 rounded-2xl transition-all cursor-pointer"
           title="Add Tiles"
         >
