@@ -48,7 +48,7 @@ export default function LoginPage() {
       storage.setRefreshToken(data.refresh_token);
       storage.setUserEmail(data.email);
       storage.setUserImage(data.profile_pic_url);
-      
+
       router.push('/');
     } catch (err: any) {
       console.error(err);
@@ -75,12 +75,12 @@ export default function LoginPage() {
               // Generate a default temporary username or let backend handle it
               const tempUsername = 'google_user_' + Math.floor(Math.random() * 100000);
               const data = await authService.googleAuth(response.access_token, tempUsername);
-              
+
               storage.setAccessToken(data.access_token);
               storage.setRefreshToken(data.refresh_token);
               storage.setUserEmail(data.email);
               storage.setUserImage(data.profile_pic_url);
-              
+
               router.push('/');
             } catch (err) {
               console.error('Google Sign-In backend verification failed:', err);
@@ -149,9 +149,9 @@ export default function LoginPage() {
 
       {/* Back Button */}
       <div className="absolute top-6 left-6">
-        <button 
+        <button
           onClick={handleBack}
-          className="flex items-center justify-center p-2 rounded-full hover:bg-white/5 transition-colors cursor-pointer focus:outline-none" 
+          className="flex items-center justify-center p-2 rounded-full hover:bg-white/5 transition-colors cursor-pointer focus:outline-none"
           aria-label="Go back"
         >
           <svg
@@ -229,22 +229,24 @@ export default function LoginPage() {
                       stroke="currentColor"
                       className="w-4 h-4"
                     >
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"
+                      />
                     </svg>
                   )}
                 </button>
               </form>
 
               {/* Divider */}
-              <div className="text-[#8a9196] text-[15px] font-normal mb-6">
-                or
-              </div>
+              <div className="text-[#8a9196] text-[15px] font-normal mb-6">or</div>
 
               {/* Social Logins */}
               <div className="flex flex-col space-y-3.5 w-[140px]">
                 {/* Google Button */}
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={handleGoogleLogin}
                   className="flex items-center justify-center space-x-2.5 w-full bg-transparent hover:bg-white/5 border border-[#2d3236] rounded-full py-2.5 px-4 transition-colors text-[14px] font-medium text-white cursor-pointer"
                   disabled={isLoading}
@@ -298,7 +300,7 @@ export default function LoginPage() {
               </div>
 
               {/* Verify Button */}
-              <button 
+              <button
                 type="button"
                 onClick={handleOtpVerify}
                 className="w-full bg-[#202528] hover:bg-[#2d3236] border border-[#2d3236] rounded-full py-3 text-[14px] font-medium text-white transition-colors cursor-pointer flex items-center justify-center"
