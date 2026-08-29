@@ -41,7 +41,7 @@ export function SuggestionCard({ type, title, colSpan, onAdd }: SuggestionCardPr
       {/* Inner Div with dynamic bounds */}
       <div
         style={innerStyle}
-        className="bg-[#f1f3f5] group-hover:bg-[#f8f9fa] rounded-[20px] p-0 relative flex items-center justify-center select-none transition-colors duration-200"
+        className="bg-[#f1f3f5] group-hover:bg-[#f8f9fa] rounded-[20px] p-0 relative flex items-center justify-center select-none transition-colors duration-200 w-full h-full max-[425px]:!w-full"
       >
         {/* Custom dashed border overlay */}
         <svg className="absolute inset-0 w-full h-full pointer-events-none" xmlns="http://www.w3.org/2000/svg">

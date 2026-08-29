@@ -4,25 +4,29 @@ interface BottomControlsProps {
   showSuggestions: boolean;
   onToggleSuggestions: () => void;
   onAddBlock: (type: string, title: string) => void;
+  viewMode: 'desktop' | 'mobile';
+  onToggleViewMode: () => void;
 }
 
 export function BottomControls({
   showSuggestions,
   onToggleSuggestions,
   onAddBlock,
+  viewMode,
+  onToggleViewMode,
 }: BottomControlsProps) {
   return (
     <footer className="absolute bottom-6 left-6 right-6 flex items-center justify-between pointer-events-none z-30">
       {/* Bottom Left controls */}
-      <div className="flex items-center space-x-3 pointer-events-auto">
+      <div className="flex items-center space-x-3 pointer-events-auto max-[425px]:hidden">
         {/* Share Link */}
-        <button className="flex items-center space-x-2.5 px-6 py-3.5 bg-white hover:bg-zinc-50 border border-[#e1e3e5] rounded-2xl shadow-md cursor-pointer transition-colors text-base font-semibold text-[#191c1e]">
+        <button className="flex items-center space-x-2.5 max-[1025px]:p-3.5 px-6 py-3.5 bg-white hover:bg-zinc-50 border border-[#e1e3e5] rounded-2xl shadow-md cursor-pointer transition-colors text-base font-semibold text-[#191c1e]">
           <img
             src="/images/svg/icons/share.svg"
             alt="Share"
             className="w-5 h-5"
           />
-          <span>Share my page</span>
+          <span className="max-[1025px]:hidden">Share my page</span>
         </button>
       </div>
 
@@ -94,34 +98,35 @@ export function BottomControls({
         </button>
 
         {/* Divider */}
-        <div className="w-px h-6 bg-[#e1e3e5] my-auto" />
+        <div className="w-px h-6 bg-[#e1e3e5] my-auto max-[1025px]:hidden" />
 
-        {/* 6. Switch to Phone */}
+        {/* 6. Switch to Phone/Desktop */}
         <button
-          className="p-3 hover:bg-zinc-100 rounded-2xl transition-all cursor-pointer"
-          title="Switch to Phone"
+          onClick={onToggleViewMode}
+          className="p-3 hover:bg-zinc-100 rounded-2xl transition-all cursor-pointer max-[1025px]:hidden"
+          title={viewMode === 'desktop' ? 'Switch to Phone' : 'Switch to Desktop'}
         >
           <img
-            src="/images/svg/icons/mobile.svg"
-            alt="Switch to Phone"
+            src={viewMode === 'desktop' ? "/images/svg/icons/mobile.svg" : "/images/svg/icons/desktop.svg"}
+            alt={viewMode === 'desktop' ? "Switch to Phone" : "Switch to Desktop"}
             className="w-6 h-6"
           />
         </button>
       </div>
 
       {/* Bottom Right controls */}
-      <div className="flex items-center space-x-3 pointer-events-auto">
+      <div className="flex items-center space-x-3 pointer-events-auto max-[425px]:hidden">
         {/* Hide suggestions button */}
         <button
           onClick={onToggleSuggestions}
-          className="flex items-center space-x-2.5 px-6 py-3.5 bg-white hover:bg-zinc-50 border border-[#e1e3e5] rounded-2xl shadow-md cursor-pointer transition-colors text-base font-semibold text-[#5a626a] hover:text-black"
+          className="flex items-center space-x-2.5 max-[1025px]:p-3.5 px-6 py-3.5 bg-white hover:bg-zinc-50 border border-[#e1e3e5] rounded-2xl shadow-md cursor-pointer transition-colors text-base font-semibold text-[#5a626a] hover:text-black"
         >
           <img
             src="/images/svg/icons/trash.svg"
             alt="Toggle Suggestions"
-            className="w-5 h-5 mr-1"
+            className="w-5 h-5 max-[1025px]:mr-0 mr-1"
           />
-          <span>{showSuggestions ? 'Remove Suggestions' : 'Show Suggestions'}</span>
+          <span className="max-[1025px]:hidden">{showSuggestions ? 'Remove Suggestions' : 'Show Suggestions'}</span>
         </button>
       </div>
     </footer>

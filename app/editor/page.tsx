@@ -194,6 +194,7 @@ export default function EditorPage() {
 
   // Suggestion visibility state
   const [showSuggestions, setShowSuggestions] = useState(true);
+  const [viewMode, setViewMode] = useState<'desktop' | 'mobile'>('desktop');
   const [displayUrl, setDisplayUrl] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [deletedBlockIds, setDeletedBlockIds] = useState<string[]>([]);
@@ -219,6 +220,21 @@ export default function EditorPage() {
     setDisplayUrl(cleanUrl);
 
     loadEditorData();
+
+    // Listen to resize and force mobile view if below 1025px
+    const handleResize = () => {
+      if (window.innerWidth <= 1025) {
+        setViewMode('mobile');
+      } else {
+        setViewMode('desktop');
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    handleResize(); // Call initially
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
   }, []);
 
   const loadEditorData = async () => {
@@ -382,6 +398,119 @@ export default function EditorPage() {
     setBlocks((prev) => appendBlock(prev, tempBlock));
   };
 
+  const handleAddSuggestionBlock = (type: string, title: string, suggestionIndex: number) => {
+    if (!profile) return;
+    const defaultDim = DEFAULT_BLOCK_DIMENSIONS[type] || { w: 2, h: 2 };
+    const hVal = defaultDim.h === 'infinite' ? 2 : defaultDim.h;
+    const isInputBlock = type === 'title' || type === 'text' || type === 'link' || type === 'tile';
+
+    const tempBlock: BlockDetails = {
+      id: `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      profile_id: profile.id,
+      type,
+      title: isInputBlock ? '' : title,
+      url: 'https://',
+      position: 1,
+      layout: {
+        desktop: { w: defaultDim.w, h: hVal },
+        mobile: { w: defaultDim.w, h: hVal },
+      },
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    const makeSpacer = () => ({
+      id: `spacer-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      profile_id: '',
+      type: 'spacer',
+      position: 0,
+      layout: { desktop: { w: 1, h: 2 }, mobile: { w: 1, h: 2 } },
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    });
+
+    const titleBlocks = blocks.length > 0 && blocks[0].type === 'title' ? [blocks[0]] : [];
+    const other = blocks.length > 0 && blocks[0].type === 'title' ? blocks.slice(1) : blocks;
+
+    const firstRow: BlockDetails[] = [];
+    const remaining: BlockDetails[] = [];
+    let currentColCount = 0;
+
+    other.forEach((b) => {
+      const w = b.type === 'spacer' ? 1 : (b.layout?.desktop?.w || 2);
+      if (currentColCount < 4) {
+        firstRow.push(b);
+        currentColCount += w;
+      } else {
+        remaining.push(b);
+      }
+    });
+
+    while (currentColCount < 4) {
+      firstRow.push(makeSpacer());
+      currentColCount += 1;
+    }
+
+    let targetColStart = 0;
+    let targetW = 1;
+    if (suggestionIndex === 1) {
+      targetColStart = 1;
+      targetW = 2;
+    } else if (suggestionIndex === 2) {
+      targetColStart = 3;
+      targetW = 1;
+    }
+
+    const slots: (BlockDetails | null)[] = [null, null, null, null];
+    let colIdx = 0;
+    firstRow.forEach((b) => {
+      const w = b.type === 'spacer' ? 1 : (b.layout?.desktop?.w || 2);
+      slots[colIdx] = b;
+      for (let i = 1; i < w; i++) {
+        slots[colIdx + i] = b;
+      }
+      colIdx += w;
+    });
+
+    const overwrittenBlocks = new Set<string>();
+    for (let i = 0; i < targetW; i++) {
+      const existingBlock = slots[targetColStart + i];
+      if (existingBlock && existingBlock.type !== 'spacer') {
+        overwrittenBlocks.add(existingBlock.id);
+      }
+    }
+
+    if (overwrittenBlocks.size > 0) {
+      overwrittenBlocks.forEach(id => {
+        if (!id.startsWith('temp-')) {
+          setDeletedBlockIds((prev) => [...prev, id]);
+        }
+      });
+    }
+
+    const newFirstRow: BlockDetails[] = [];
+    let i = 0;
+    while (i < 4) {
+      if (i === targetColStart) {
+        newFirstRow.push(tempBlock);
+        i += targetW;
+      } else {
+        const originalBlock = slots[i];
+        if (originalBlock && !overwrittenBlocks.has(originalBlock.id)) {
+          newFirstRow.push(originalBlock);
+          const w = originalBlock.type === 'spacer' ? 1 : (originalBlock.layout?.desktop?.w || 2);
+          i += w;
+        } else {
+          newFirstRow.push(makeSpacer());
+          i += 1;
+        }
+      }
+    }
+
+    const combined = [...titleBlocks, ...newFirstRow, ...remaining];
+    setBlocks(fillSpacers(combined));
+  };
+
   // Delete block locally, tracking DB IDs for synchronization on Save click
   const handleDeleteBlock = (blockId: string) => {
     if (!blockId.startsWith('temp-')) {
@@ -465,6 +594,231 @@ export default function EditorPage() {
   const titleBlocks = blocks.length > 0 && blocks[0].type === 'title' ? [blocks[0]] : [];
   const otherBlocks = blocks.length > 0 && blocks[0].type === 'title' ? blocks.slice(1) : blocks;
 
+  const getRenderableContent = () => {
+    const firstRow: BlockDetails[] = [];
+    const remaining: BlockDetails[] = [];
+    let currentColCount = 0;
+
+    otherBlocks.forEach((b) => {
+      const w = b.type === 'spacer' ? 1 : (b.layout?.desktop?.w || 2);
+      if (currentColCount < 4) {
+        firstRow.push(b);
+        currentColCount += w;
+      } else {
+        remaining.push(b);
+      }
+    });
+
+    while (currentColCount < 4) {
+      firstRow.push({
+        id: `temp-spacer-pad-${currentColCount}`,
+        profile_id: '',
+        type: 'spacer',
+        position: 0,
+        layout: { desktop: { w: 1, h: 2 }, mobile: { w: 1, h: 2 } },
+        created_at: '',
+        updated_at: '',
+      });
+      currentColCount += 1;
+    }
+
+    const blocksByCol: Record<number, BlockDetails> = {};
+    let colIdx = 0;
+    firstRow.forEach((b) => {
+      blocksByCol[colIdx] = b;
+      const w = b.type === 'spacer' ? 1 : (b.layout?.desktop?.w || 2);
+      colIdx += w;
+    });
+
+    const renderItems: React.ReactNode[] = [];
+
+    // Slot 0 (col 0)
+    const blockAt0 = blocksByCol[0];
+    if (blockAt0 && blockAt0.type !== 'spacer') {
+      renderItems.push(
+        <BlockCard
+          key={blockAt0.id}
+          block={blockAt0}
+          onDelete={handleDeleteBlock}
+          onUpdate={handleUpdateBlock}
+          viewMode={viewMode}
+        />
+      );
+    } else if (showSuggestions && activeId === null) {
+      renderItems.push(
+        <SuggestionCard
+          key="suggest-0"
+          type="link"
+          title="Add Link"
+          colSpan="col-span-1"
+          onAdd={(type, title) => handleAddSuggestionBlock(type, title, 0)}
+        />
+      );
+    } else if (blockAt0) {
+      renderItems.push(
+        <BlockCard
+          key={blockAt0.id}
+          block={blockAt0}
+          onDelete={handleDeleteBlock}
+          onUpdate={handleUpdateBlock}
+          viewMode={viewMode}
+        />
+      );
+    }
+
+    // Slot 1 (cols 1-2)
+    const blockAt1 = blocksByCol[1];
+    const blockAt2 = blocksByCol[2];
+    const hasRealBlockAt1Or2 = (blockAt1 && blockAt1.type !== 'spacer') || (blockAt2 && blockAt2.type !== 'spacer');
+
+    if (hasRealBlockAt1Or2) {
+      if (blockAt1) {
+        renderItems.push(
+          <BlockCard
+            key={blockAt1.id}
+            block={blockAt1}
+            onDelete={handleDeleteBlock}
+            onUpdate={handleUpdateBlock}
+            viewMode={viewMode}
+          />
+        );
+      }
+      if (blockAt2 && (!blockAt1 || blockAt1.layout?.desktop?.w !== 2)) {
+        renderItems.push(
+          <BlockCard
+            key={blockAt2.id}
+            block={blockAt2}
+            onDelete={handleDeleteBlock}
+            onUpdate={handleUpdateBlock}
+            viewMode={viewMode}
+          />
+        );
+      }
+    } else if (showSuggestions && activeId === null) {
+      renderItems.push(
+        <SuggestionCard
+          key="suggest-1"
+          type="image"
+          title="Add Image"
+          colSpan="col-span-2"
+          onAdd={(type, title) => handleAddSuggestionBlock(type, title, 1)}
+        />
+      );
+    } else {
+      if (blockAt1) {
+        renderItems.push(
+          <BlockCard
+            key={blockAt1.id}
+            block={blockAt1}
+            onDelete={handleDeleteBlock}
+            onUpdate={handleUpdateBlock}
+            viewMode={viewMode}
+          />
+        );
+      }
+      if (blockAt2) {
+        renderItems.push(
+          <BlockCard
+            key={blockAt2.id}
+            block={blockAt2}
+            onDelete={handleDeleteBlock}
+            onUpdate={handleUpdateBlock}
+            viewMode={viewMode}
+          />
+        );
+      }
+    }
+
+    // Slot 2 (col 3)
+    const blockAt3 = blocksByCol[3];
+    if (blockAt3 && blockAt3.type !== 'spacer') {
+      renderItems.push(
+        <BlockCard
+          key={blockAt3.id}
+          block={blockAt3}
+          onDelete={handleDeleteBlock}
+          onUpdate={handleUpdateBlock}
+          viewMode={viewMode}
+        />
+      );
+    } else if (showSuggestions && activeId === null) {
+      renderItems.push(
+        <SuggestionCard
+          key="suggest-2"
+          type="link"
+          title="Add Link"
+          colSpan="col-span-1"
+          onAdd={(type, title) => handleAddSuggestionBlock(type, title, 2)}
+        />
+      );
+    } else if (blockAt3) {
+      renderItems.push(
+        <BlockCard
+          key={blockAt3.id}
+          block={blockAt3}
+          onDelete={handleDeleteBlock}
+          onUpdate={handleUpdateBlock}
+          viewMode={viewMode}
+        />
+      );
+    }
+
+    remaining.forEach((block) => {
+      renderItems.push(
+        <BlockCard
+          key={block.id}
+          block={block}
+          onDelete={handleDeleteBlock}
+          onUpdate={handleUpdateBlock}
+          viewMode={viewMode}
+        />
+      );
+    });
+
+    return renderItems;
+  };
+
+  const renderGridContent = () => (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCorners}
+      onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
+      onDragEnd={handleDragEnd}
+    >
+      <SortableContext
+        items={blocks.map((block) => block.id)}
+        strategy={rectSortingStrategy}
+      >
+        {/* 1. Top Title Block (if present) */}
+        {titleBlocks.map((block) => (
+          <BlockCard
+            key={block.id}
+            block={block}
+            onDelete={handleDeleteBlock}
+            onUpdate={handleUpdateBlock}
+            viewMode={viewMode}
+          />
+        ))}
+
+        {/* 2. Suggestion Placeholders and content blocks */}
+        {getRenderableContent()}
+      </SortableContext>
+
+      <DragOverlay>
+        {activeId ? (
+          <BlockCard
+            block={blocks.find((b) => b.id === activeId)!}
+            onDelete={handleDeleteBlock}
+            onUpdate={handleUpdateBlock}
+            isOverlay
+            viewMode={viewMode}
+          />
+        ) : null}
+      </DragOverlay>
+    </DndContext>
+  );
+
   return (
     <main className="flex flex-col h-screen overflow-hidden bg-[#fafbfc] text-[#191c1e] font-sans antialiased relative">
       <EditorHeader
@@ -474,94 +828,66 @@ export default function EditorPage() {
         onProfileSwitch={handleProfileSwitch}
         onSave={handleSave}
         isSaving={isSaving}
+        showSuggestions={showSuggestions}
+        onToggleSuggestions={() => setShowSuggestions(!showSuggestions)}
       />
 
       {/* Main Workspace */}
-      <div className="flex-1 w-full grid grid-cols-1 lg:grid-cols-3 gap-8 py-8 overflow-hidden">
-        {/* Left Column (1/3) */}
-        <div className="lg:col-span-1 h-full overflow-y-auto pr-2">
-          <ProfileEditor
-            displayName={displayName}
-            bio={bio}
-            onDisplayNameChange={(val) => {
-              setDisplayName(val);
-            }}
-            onBioChange={(val) => {
-              setBio(val);
-            }}
-          />
-        </div>
+      <div className="flex-1 w-full flex justify-center py-8 overflow-hidden">
+        {viewMode === 'desktop' ? (
+          /* Desktop Split Workspace */
+          <div className="w-full max-w-[1360px] px-6 flex flex-row gap-8 h-full overflow-hidden">
+            {/* Left Column */}
+            <div className="w-[340px] shrink-0 h-full overflow-y-auto pr-2">
+              <ProfileEditor
+                displayName={displayName}
+                bio={bio}
+                onDisplayNameChange={setDisplayName}
+                onBioChange={setBio}
+              />
+            </div>
 
-        {/* Right column: Blocks layout editor (2/3) */}
-        <div className="lg:col-span-2 space-y-6 pb-36 h-full overflow-y-auto pr-2 max-w-[980px] w-full px-5">
-
-
-          {/* Grid Layout containing active blocks + suggestions */}
-          <div className="grid grid-cols-1 md:grid-cols-[repeat(4,215px)] gap-0 w-full items-start">
-            {/* 1. Saved/Active Blocks */}
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCorners}
-              onDragStart={handleDragStart}
-              onDragOver={handleDragOver}
-              onDragEnd={handleDragEnd}
-            >
-              <SortableContext
-                items={blocks.map((block) => block.id)}
-                strategy={rectSortingStrategy}
-              >
-                {/* 1. Top Title Block (if present) */}
-                {titleBlocks.map((block) => (
-                  <BlockCard
-                    key={block.id}
-                    block={block}
-                    onDelete={handleDeleteBlock}
-                    onUpdate={handleUpdateBlock}
-                  />
-                ))}
-
-                {/* 2. Suggestion Placeholders (shown between Top Title Block and content blocks) */}
-                {showSuggestions && activeId === null &&
-                  suggestions.map((s, idx) => (
-                    <SuggestionCard
-                      key={`suggest-${idx}`}
-                      type={s.type}
-                      title={s.title}
-                      colSpan={s.colSpan}
-                      onAdd={handleAddBlock}
-                    />
-                  ))}
-
-                {/* 3. Created / Content Blocks */}
-                {otherBlocks.map((block) => (
-                  <BlockCard
-                    key={block.id}
-                    block={block}
-                    onDelete={handleDeleteBlock}
-                    onUpdate={handleUpdateBlock}
-                  />
-                ))}
-              </SortableContext>
-
-              <DragOverlay>
-                {activeId ? (
-                  <BlockCard
-                    block={blocks.find((b) => b.id === activeId)!}
-                    onDelete={handleDeleteBlock}
-                    onUpdate={handleUpdateBlock}
-                    isOverlay
-                  />
-                ) : null}
-              </DragOverlay>
-            </DndContext>
+            {/* Right column: Blocks layout editor */}
+            <div className="flex-1 space-y-6 pb-36 h-full overflow-y-auto pr-2 w-full px-5">
+              <div className="grid grid-cols-1 md:grid-cols-[repeat(4,215px)] gap-0 w-full items-start">
+                {renderGridContent()}
+              </div>
+            </div>
           </div>
-        </div>
+        ) : (
+          /* Mobile Mockup Workspace */
+          <div className="w-full h-full flex items-start justify-center overflow-y-auto pb-36 md:px-4">
+            <div className="w-full md:max-w-[480px] md:min-h-[750px] bg-transparent md:bg-white md:border md:border-[#e1e3e5] md:rounded-[48px] md:shadow-2xl p-4 md:p-6 flex flex-col items-center md:my-4 overflow-y-auto scrollbar-none">
+              {/* Profile Header Preview inside mockup */}
+              <div className="w-full flex flex-col items-center text-center space-y-4 pt-4 mb-6">
+                <div className="w-32 h-32 rounded-full overflow-hidden bg-zinc-100 flex items-center justify-center border-4 border-white shadow-lg">
+                  <img
+                    src="/images/svg/icons/image-placeholder.svg"
+                    alt="Profile Placeholder"
+                    className="w-16 h-16 opacity-60"
+                  />
+                </div>
+                <div>
+                  <h2 className="text-3xl font-extrabold text-[#191c1e]">{displayName || 'Your name'}</h2>
+                  <p className="text-[15px] text-[#5a626a] mt-1 whitespace-pre-line leading-relaxed">{bio || 'Your bio...'}</p>
+                </div>
+              </div>
+
+              {/* Grid Layout inside mockup (constrained to 2 columns!) */}
+              <div className="grid max-[425px]:grid-cols-2 max-[425px]:gap-3 max-[425px]:px-4 grid-cols-[repeat(2,215px)] gap-0 w-full items-start justify-center">
+                {renderGridContent()}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <BottomControls
         showSuggestions={showSuggestions}
         onToggleSuggestions={() => setShowSuggestions(!showSuggestions)}
         onAddBlock={handleAddBlock}
+        viewMode={viewMode}
+        onToggleViewMode={() => setViewMode((prev) => (prev === 'desktop' ? 'mobile' : 'desktop'))}
       />
     </main>
   );
