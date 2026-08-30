@@ -109,12 +109,17 @@ export default function DashboardPage() {
           {activeProfile ? (
             <div className="flex flex-col items-center justify-center gap-3 animate-fadeIn">
               <h2 className="text-zinc-200 text-lg font-medium tracking-wide">
-                {displayUrl}/{activeProfile.display_name?.toLowerCase().replace(/\s+/g, '') || 'page'}
+                {displayUrl}/
+                {activeProfile.display_name?.toLowerCase().replace(/\s+/g, '') || 'page'}
               </h2>
               <div className="flex items-center justify-center gap-3">
                 {/* View Live */}
                 <a
-                  href={displayUrl ? `http://${displayUrl}/${activeProfile.display_name?.toLowerCase().replace(/\s+/g, '')}` : '#'}
+                  href={
+                    displayUrl
+                      ? `http://${displayUrl}/${activeProfile.display_name?.toLowerCase().replace(/\s+/g, '')}`
+                      : '#'
+                  }
                   target="_blank"
                   rel="noopener noreferrer"
                   className="p-2 bg-[#202528] hover:bg-[#2d3236] border border-[#2d3236] text-zinc-300 hover:text-white rounded-xl transition-all cursor-pointer inline-block"
@@ -223,7 +228,10 @@ export default function DashboardPage() {
                     />
                     <circle cx="9" cy="10" r="1" fill="black" />
                     <circle cx="15" cy="10" r="1" fill="black" />
-                    <path d="M12 13.5c-.5 0-.7.2-.7.5s.2.5.7.5.7-.2.7-.5-.2-.5-.7-.5z" fill="black" />
+                    <path
+                      d="M12 13.5c-.5 0-.7.2-.7.5s.2.5.7.5.7-.2.7-.5-.2-.5-.7-.5z"
+                      fill="black"
+                    />
                   </svg>
                 </div>
 
@@ -231,9 +239,7 @@ export default function DashboardPage() {
                   <h3 className="text-zinc-800 text-lg font-bold truncate">
                     {p.display_name || 'My page'}
                   </h3>
-                  <p className="text-zinc-500 text-xs mt-1 truncate">
-                    {p.bio || 'Your bio...'}
-                  </p>
+                  <p className="text-zinc-500 text-xs mt-1 truncate">{p.bio || 'Your bio...'}</p>
                 </div>
 
                 {/* Minimalist icon inside purple circle at bottom center */}

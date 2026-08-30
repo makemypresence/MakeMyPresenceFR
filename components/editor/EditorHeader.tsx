@@ -32,11 +32,7 @@ export function EditorHeader({
           href="/dashboard"
           className="p-2.5 hover:bg-[#e1e3e5] rounded-full transition-colors cursor-pointer text-[#5a626a]"
         >
-          <img
-            src="/images/svg/icons/left-arrow.svg"
-            alt="Back"
-            className="w-6 h-6"
-          />
+          <img src="/images/svg/icons/left-arrow.svg" alt="Back" className="w-6 h-6" />
         </Link>
 
         {/* Save Button */}
@@ -45,11 +41,7 @@ export function EditorHeader({
           disabled={isSaving || !profile}
           className="flex items-center space-x-2 max-[425px]:space-x-0 px-4 py-2 max-[425px]:px-2.5 bg-black hover:bg-zinc-800 text-white rounded-full transition-colors cursor-pointer text-sm font-semibold disabled:opacity-50"
         >
-          <img
-            src="/images/svg/icons/save.svg"
-            alt="Save"
-            className="w-4.5 h-4.5 invert"
-          />
+          <img src="/images/svg/icons/save.svg" alt="Save" className="w-4.5 h-4.5 invert" />
           <span className="max-[425px]:hidden">{isSaving ? 'Saving...' : 'Save'}</span>
         </button>
       </div>
@@ -70,11 +62,7 @@ export function EditorHeader({
               ))}
             </select>
             <div className="absolute right-4 max-[425px]:right-0 max-[425px]:left-0 max-[425px]:mx-auto max-[425px]:w-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#5a626a]">
-              <img
-                src="/images/svg/icons/down-arrow.svg"
-                alt="Dropdown"
-                className="w-4 h-4"
-              />
+              <img src="/images/svg/icons/down-arrow.svg" alt="Dropdown" className="w-4 h-4" />
             </div>
           </div>
         )}
@@ -86,19 +74,11 @@ export function EditorHeader({
             onClick={onToggleSuggestions}
             className="flex items-center justify-center p-2.5 bg-white hover:bg-zinc-50 border border-[#e1e3e5] rounded-2xl shadow-md cursor-pointer text-[#5a626a] hover:text-black"
           >
-            <img
-              src="/images/svg/icons/trash.svg"
-              alt="Toggle Suggestions"
-              className="w-5 h-5"
-            />
+            <img src="/images/svg/icons/trash.svg" alt="Toggle Suggestions" className="w-5 h-5" />
           </button>
           {/* Share Button */}
           <button className="flex items-center justify-center p-2.5 bg-white hover:bg-zinc-50 border border-[#e1e3e5] rounded-2xl shadow-md cursor-pointer text-[#191c1e]">
-            <img
-              src="/images/svg/icons/share.svg"
-              alt="Share"
-              className="w-5 h-5"
-            />
+            <img src="/images/svg/icons/share.svg" alt="Share" className="w-5 h-5" />
           </button>
         </div>
       </div>

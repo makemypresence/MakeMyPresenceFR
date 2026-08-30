@@ -28,29 +28,26 @@ export function BlockCard({
   isOverlay = false,
   viewMode = 'desktop',
 }: BlockCardProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-    over,
-  } = useSortable({
-    id: block.id,
-    disabled: isOverlay,
-    transition: {
-      duration: 300,
-      easing: 'cubic-bezier(0.2, 0, 0, 1)',
-    },
-  });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging, over } =
+    useSortable({
+      id: block.id,
+      disabled: isOverlay,
+      transition: {
+        duration: 300,
+        easing: 'cubic-bezier(0.2, 0, 0, 1)',
+      },
+    });
 
   const isOver = over && over.id === block.id;
 
   const rawW = block.layout?.desktop?.w || DEFAULT_BLOCK_DIMENSIONS[block.type]?.w || 2;
   const w = viewMode === 'mobile' ? Math.min(2, rawW) : rawW;
   const h = block.layout?.desktop?.h || DEFAULT_BLOCK_DIMENSIONS[block.type]?.h || 2;
-  const isInputBlock = block.type === 'title' || block.type === 'text' || block.type === 'link' || block.type === 'image';
+  const isInputBlock =
+    block.type === 'title' ||
+    block.type === 'text' ||
+    block.type === 'link' ||
+    block.type === 'image';
 
   // Resolve pixel boundaries from dimensions utility
   const dims = getBoxDimensions(w, h);
@@ -189,9 +186,7 @@ export function BlockCard({
         <div
           style={innerStyle}
           className={`rounded-[14px] p-0 relative flex items-center justify-center transition-all duration-200 w-full h-full max-[425px]:!w-full ${
-            isOver
-              ? 'bg-zinc-100/50'
-              : 'bg-white'
+            isOver ? 'bg-zinc-100/50' : 'bg-white'
           }`}
         />
       </div>
@@ -212,7 +207,7 @@ export function BlockCard({
         <div className="absolute inset-[1px] pointer-events-none z-30">
           {/* Thick Black Rounded Border matching outer boundaries */}
           <div className="absolute inset-0 border-[4px] border-black rounded-[18px]" />
-          
+
           {/* 4 Handles (Dots) */}
           <div
             onMouseDown={(e) => startResizeDrag(e, 'top')}
@@ -253,11 +248,7 @@ export function BlockCard({
               className="absolute -top-2.5 -left-2.5 p-[10px] bg-white hover:bg-zinc-50 text-zinc-400 hover:text-black rounded-full border border-zinc-200 shadow-sm opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-200 cursor-pointer z-10"
               title="Delete Block"
             >
-              <img
-                src="/images/svg/icons/trash.svg"
-                alt="Delete Block"
-                className="w-5 h-5"
-              />
+              <img src="/images/svg/icons/trash.svg" alt="Delete Block" className="w-5 h-5" />
             </button>
 
             {/* Drag Handle Grip (Placed inside Inner Div, top-right overlay) */}
@@ -267,7 +258,13 @@ export function BlockCard({
               className="absolute -top-2.5 -right-2.5 p-[10px] bg-white hover:bg-zinc-50 text-zinc-400 hover:text-black rounded-full border border-zinc-200 shadow-sm opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-200 cursor-grab active:cursor-grabbing z-10 flex items-center justify-center w-[42px] h-[42px]"
               title="Drag to Reorder"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                viewBox="0 0 24 24"
+              >
                 <circle cx="9" cy="6" r="1.25" fill="currentColor" />
                 <circle cx="9" cy="12" r="1.25" fill="currentColor" />
                 <circle cx="9" cy="18" r="1.25" fill="currentColor" />
@@ -297,11 +294,7 @@ export function BlockCard({
                 className="absolute -bottom-5 left-1/2 -translate-x-1/2 bg-white border border-zinc-200 rounded-xl w-[42px] h-[42px] flex items-center justify-center shadow-sm opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-200 z-20 cursor-pointer hover:bg-zinc-50"
                 title="Duplicate Block"
               >
-                <img
-                  src="/images/svg/icons/duplicate.svg"
-                  alt="Duplicate"
-                  className="w-5 h-5"
-                />
+                <img src="/images/svg/icons/duplicate.svg" alt="Duplicate" className="w-5 h-5" />
               </button>
             ) : (
               <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 bg-white border border-zinc-200 rounded-2xl px-3 py-1.5 shadow-sm flex flex-row flex-nowrap items-center space-x-1.5 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-200 z-20 whitespace-nowrap w-max min-w-max">
@@ -311,11 +304,7 @@ export function BlockCard({
                     className="p-1.5 hover:bg-zinc-50 rounded-lg text-zinc-500 hover:text-black cursor-pointer transition-colors"
                     title="Edit Image"
                   >
-                    <img
-                      src="/images/svg/icons/edit.svg"
-                      alt="Edit"
-                      className="w-5 h-5"
-                    />
+                    <img src="/images/svg/icons/edit.svg" alt="Edit" className="w-5 h-5" />
                   </button>
                 )}
                 <button
@@ -323,22 +312,14 @@ export function BlockCard({
                   className="p-1.5 hover:bg-zinc-50 rounded-lg text-zinc-500 hover:text-black cursor-pointer transition-colors"
                   title="Resize Block"
                 >
-                  <img
-                    src="/images/svg/icons/resize.svg"
-                    alt="Resize"
-                    className="w-5 h-5"
-                  />
+                  <img src="/images/svg/icons/resize.svg" alt="Resize" className="w-5 h-5" />
                 </button>
                 <button
                   onClick={handleDuplicate}
                   className="p-1.5 hover:bg-zinc-50 rounded-lg text-zinc-500 hover:text-black cursor-pointer transition-colors"
                   title="Duplicate Block"
                 >
-                  <img
-                    src="/images/svg/icons/duplicate.svg"
-                    alt="Duplicate"
-                    className="w-5 h-5"
-                  />
+                  <img src="/images/svg/icons/duplicate.svg" alt="Duplicate" className="w-5 h-5" />
                 </button>
               </div>
             )}

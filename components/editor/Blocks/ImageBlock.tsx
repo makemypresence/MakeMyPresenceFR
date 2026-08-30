@@ -50,13 +50,17 @@ export function ImageBlock({ block, dims, onUpdate }: ImageBlockProps) {
         </div>
       ) : (
         <label className="flex flex-col items-center justify-center w-full h-full bg-transparent group-hover:bg-zinc-100 rounded-[10px] cursor-pointer transition-colors duration-200 px-4">
-          <div className={`flex ${isWidth1 ? 'flex-row items-center space-x-2' : 'flex-col items-center space-y-2'}`}>
+          <div
+            className={`flex ${isWidth1 ? 'flex-row items-center space-x-2' : 'flex-col items-center space-y-2'}`}
+          >
             <img
               src="/images/svg/icons/upload.svg"
               alt="Add Image"
               className={`${isWidth1 ? 'w-6 h-6' : 'w-8 h-8'} opacity-60 shrink-0`}
             />
-            <span className={`${isWidth1 ? 'text-[18px]' : 'text-[20px]'} font-semibold text-[#8a9196] text-center truncate`}>
+            <span
+              className={`${isWidth1 ? 'text-[18px]' : 'text-[20px]'} font-semibold text-[#8a9196] text-center truncate`}
+            >
               Add Image
             </span>
           </div>

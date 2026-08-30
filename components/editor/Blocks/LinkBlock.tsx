@@ -18,10 +18,7 @@ export function LinkBlock({ block, dims, onUpdate }: LinkBlockProps) {
         onChange={(e) => onUpdate?.(block.id, { title: e.target.value })}
         placeholder="Add Link"
         style={{
-          height:
-            dims.innerHeight === 'infinite'
-              ? 'auto'
-              : `${dims.innerHeight - 16}px`,
+          height: dims.innerHeight === 'infinite' ? 'auto' : `${dims.innerHeight - 16}px`,
         }}
         className="w-full bg-transparent group-hover:bg-zinc-100 focus:bg-zinc-100 text-[#191c1e] rounded-[14px] px-4 text-[20px] font-semibold border-none outline-none transition-colors duration-200"
       />

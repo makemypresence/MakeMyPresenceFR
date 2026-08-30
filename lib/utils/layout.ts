@@ -9,10 +9,10 @@ export const removeEmptyRows = (allBlocks: BlockDetails[], cols = 4): BlockDetai
   allBlocks.forEach((block) => {
     const rawW = block.layout?.desktop?.w || DEFAULT_BLOCK_DIMENSIONS[block.type]?.w || 2;
     // For mobile (cols = 2), constraint width to maximum of 2 units
-    const w = block.type === 'spacer' ? 1 : (cols === 2 ? Math.min(2, rawW) : rawW);
+    const w = block.type === 'spacer' ? 1 : cols === 2 ? Math.min(2, rawW) : rawW;
 
     if (currentColumn + w > cols) {
-      const hasRealBlock = currentRow.some(b => b.type !== 'spacer');
+      const hasRealBlock = currentRow.some((b) => b.type !== 'spacer');
       if (hasRealBlock) {
         result.push(...currentRow);
       }
@@ -23,7 +23,7 @@ export const removeEmptyRows = (allBlocks: BlockDetails[], cols = 4): BlockDetai
     currentRow.push(block);
     currentColumn += w;
     if (currentColumn === cols) {
-      const hasRealBlock = currentRow.some(b => b.type !== 'spacer');
+      const hasRealBlock = currentRow.some((b) => b.type !== 'spacer');
       if (hasRealBlock) {
         result.push(...currentRow);
       }
@@ -33,7 +33,7 @@ export const removeEmptyRows = (allBlocks: BlockDetails[], cols = 4): BlockDetai
   });
 
   if (currentRow.length > 0) {
-    const hasRealBlock = currentRow.some(b => b.type !== 'spacer');
+    const hasRealBlock = currentRow.some((b) => b.type !== 'spacer');
     if (hasRealBlock) {
       result.push(...currentRow);
     }
@@ -47,11 +47,11 @@ export const fillSpacers = (existingBlocks: BlockDetails[], cols = 4): BlockDeta
   let currentColumn = 0;
 
   // Filter out any existing spacers first to avoid duplicate spacers
-  const nonSpacers = existingBlocks.filter(b => b.type !== 'spacer');
+  const nonSpacers = existingBlocks.filter((b) => b.type !== 'spacer');
 
   nonSpacers.forEach((block) => {
     const rawW = block.layout?.desktop?.w || DEFAULT_BLOCK_DIMENSIONS[block.type]?.w || 2;
-    const w = block.type === 'spacer' ? 1 : (cols === 2 ? Math.min(2, rawW) : rawW);
+    const w = block.type === 'spacer' ? 1 : cols === 2 ? Math.min(2, rawW) : rawW;
 
     // If it doesn't fit in the current row:
     if (currentColumn + w > cols) {
@@ -105,7 +105,11 @@ export const fillSpacers = (existingBlocks: BlockDetails[], cols = 4): BlockDeta
 // Append a new block to the end of the layout, preserving existing positions (drag gaps).
 // Strips trailing spacers from the last row, checks if the new block fits in the remaining
 // space. If not, pads the row and starts a new one.
-export const appendBlock = (existingBlocks: BlockDetails[], newBlock: BlockDetails, cols = 4): BlockDetails[] => {
+export const appendBlock = (
+  existingBlocks: BlockDetails[],
+  newBlock: BlockDetails,
+  cols = 4,
+): BlockDetails[] => {
   const makeSpacer = () => ({
     id: `spacer-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     profile_id: '',
@@ -126,7 +130,7 @@ export const appendBlock = (existingBlocks: BlockDetails[], newBlock: BlockDetai
   let currentColumn = 0;
   blocks.forEach((block) => {
     const rawW = block.layout?.desktop?.w || DEFAULT_BLOCK_DIMENSIONS[block.type]?.w || 2;
-    const w = block.type === 'spacer' ? 1 : (cols === 2 ? Math.min(2, rawW) : rawW);
+    const w = block.type === 'spacer' ? 1 : cols === 2 ? Math.min(2, rawW) : rawW;
     currentColumn += w;
     if (currentColumn >= cols) currentColumn = 0;
   });
