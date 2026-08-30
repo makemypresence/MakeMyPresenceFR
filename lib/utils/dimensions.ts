@@ -55,7 +55,7 @@ export const DEFAULT_BLOCK_DIMENSIONS: Record<
   { w: number; h: number | 'infinite' }
 > = {
   link: { w: 1, h: 2 },
-  image: { w: 2, h: 2 },
+  image: { w: 1, h: 2 },
   spotify: { w: 2, h: 2 },
   youtube: { w: 2, h: 2 },
   title: { w: 4, h: 1 },
