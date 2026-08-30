@@ -741,7 +741,7 @@ export default function EditorPage() {
             </div>
 
             {/* Right column: Blocks layout editor */}
-            <div className="flex-1 space-y-6 pb-36 h-full overflow-y-auto pr-2 w-full px-5">
+            <div className="flex-1 space-y-6 pt-4 pb-36 h-full overflow-y-auto pr-2 w-full px-5">
               <div className="grid grid-cols-1 md:grid-cols-[repeat(4,215px)] gap-0 w-full items-start">
                 {renderGridContent()}
               </div>
@@ -767,7 +767,7 @@ export default function EditorPage() {
               </div>
 
               {/* Grid Layout inside mockup (constrained to 2 columns!) */}
-              <div className="grid max-[425px]:grid-cols-2 max-[425px]:gap-3 max-[425px]:px-4 grid-cols-[repeat(2,215px)] gap-0 w-full items-start justify-center">
+              <div className="grid pt-2 max-[425px]:grid-cols-2 max-[425px]:gap-3 max-[425px]:px-4 grid-cols-[repeat(2,215px)] gap-0 w-full items-start justify-center">
                 {renderGridContent()}
               </div>
             </div>

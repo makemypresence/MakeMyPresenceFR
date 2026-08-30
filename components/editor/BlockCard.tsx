@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { BlockDetails } from '../../lib/services/block';
@@ -84,26 +84,82 @@ export function BlockCard({
     }
   };
 
+  const [isResizing, setIsResizing] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isResizing) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (cardRef.current && !cardRef.current.contains(event.target as Node)) {
+        setIsResizing(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isResizing]);
+
+  const setRefs = (node: HTMLDivElement | null) => {
+    setNodeRef(node);
+    (cardRef as any).current = node;
+  };
+
+  const startResizeDrag = (e: React.MouseEvent, direction: 'top' | 'bottom' | 'left' | 'right') => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const startW = block.layout?.desktop?.w || DEFAULT_BLOCK_DIMENSIONS[block.type]?.w || 2;
+    const startH = block.layout?.desktop?.h || DEFAULT_BLOCK_DIMENSIONS[block.type]?.h || 2;
+    const hVal = typeof startH === 'string' ? 2 : startH;
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const diffX = moveEvent.clientX - startX;
+      const diffY = moveEvent.clientY - startY;
+
+      let newW = startW;
+      let newH = hVal;
+
+      if (direction === 'right') {
+        newW = Math.max(1, Math.min(4, startW + Math.round(diffX / 215)));
+      } else if (direction === 'left') {
+        newW = Math.max(1, Math.min(4, startW - Math.round(diffX / 215)));
+      } else if (direction === 'bottom') {
+        newH = Math.max(1, Math.min(8, hVal + Math.round(diffY / 107.5)));
+      } else if (direction === 'top') {
+        newH = Math.max(1, Math.min(8, hVal - Math.round(diffY / 107.5)));
+      }
+
+      if (viewMode === 'mobile' && newW > 2) {
+        newW = 2;
+      }
+
+      if (onUpdate && (newW !== startW || newH !== hVal)) {
+        onUpdate(block.id, {
+          layout: {
+            desktop: { w: newW, h: newH },
+            mobile: { w: newW, h: newH },
+          },
+        });
+      }
+    };
+
+    const handleMouseUp = () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+  };
+
   const handleResize = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!onUpdate) return;
-    const currentW = block.layout?.desktop?.w || DEFAULT_BLOCK_DIMENSIONS[block.type]?.w || 2;
-    const currentH = block.layout?.desktop?.h || DEFAULT_BLOCK_DIMENSIONS[block.type]?.h || 2;
-    const hVal = typeof currentH === 'string' ? 2 : currentH;
-    let nextW = currentW;
-    if (block.type === 'link') {
-      nextW = currentW === 1 ? 2 : (currentW === 2 ? 4 : 1);
-    } else if (block.type === 'text' || block.type === 'image') {
-      nextW = currentW === 2 ? 4 : 2;
-    } else if (block.type === 'tile') {
-      nextW = currentW === 1 ? 2 : 1;
-    }
-    onUpdate(block.id, {
-      layout: {
-        desktop: { w: nextW, h: hVal },
-        mobile: { w: nextW, h: hVal },
-      },
-    });
+    setIsResizing(!isResizing);
   };
 
   const handleDuplicate = (e: React.MouseEvent) => {
@@ -145,12 +201,42 @@ export function BlockCard({
   return (
     // Outer Div (flex centered)
     <div
-      ref={setNodeRef}
+      ref={setRefs}
       style={outerStyle}
       className={`relative ${colSpan} group w-full flex items-center justify-center transition-all duration-200 ${
         isDragging ? 'scale-95 z-20 opacity-50' : ''
       }`}
     >
+      {/* Resizing Guide Border and 4 Dots (positioned at outer container boundaries) */}
+      {isResizing && !showPlaceholder && (
+        <div className="absolute inset-[1px] pointer-events-none z-30">
+          {/* Thick Black Rounded Border matching outer boundaries */}
+          <div className="absolute inset-0 border-[4px] border-black rounded-[18px]" />
+          
+          {/* 4 Handles (Dots) */}
+          <div
+            onMouseDown={(e) => startResizeDrag(e, 'top')}
+            className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3.5 h-3.5 bg-black border-2 border-white rounded-full cursor-ns-resize pointer-events-auto z-40 shadow-sm"
+            title="Drag to resize vertically"
+          />
+          <div
+            onMouseDown={(e) => startResizeDrag(e, 'bottom')}
+            className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-3.5 h-3.5 bg-black border-2 border-white rounded-full cursor-ns-resize pointer-events-auto z-40 shadow-sm"
+            title="Drag to resize vertically"
+          />
+          <div
+            onMouseDown={(e) => startResizeDrag(e, 'left')}
+            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 w-3.5 h-3.5 bg-black border-2 border-white rounded-full cursor-ew-resize pointer-events-auto z-40 shadow-sm"
+            title="Drag to resize horizontally"
+          />
+          <div
+            onMouseDown={(e) => startResizeDrag(e, 'right')}
+            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-3.5 h-3.5 bg-black border-2 border-white rounded-full cursor-ew-resize pointer-events-auto z-40 shadow-sm"
+            title="Drag to resize horizontally"
+          />
+        </div>
+      )}
+
       <div
         style={innerStyle}
         className={`rounded-[14px] p-0 relative flex items-center justify-center transition-all duration-200 border w-full h-full max-[425px]:!w-full ${
@@ -164,7 +250,7 @@ export function BlockCard({
             {/* Delete Button (Placed inside Inner Div, relative to it) */}
             <button
               onClick={() => onDelete(block.id)}
-              className="absolute -top-2.5 -left-2.5 p-[10px] bg-white hover:bg-zinc-50 text-zinc-400 hover:text-black rounded-full border border-zinc-200 shadow-sm opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto transition-opacity duration-200 cursor-pointer z-10"
+              className="absolute -top-2.5 -left-2.5 p-[10px] bg-white hover:bg-zinc-50 text-zinc-400 hover:text-black rounded-full border border-zinc-200 shadow-sm opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-200 cursor-pointer z-10"
               title="Delete Block"
             >
               <img
