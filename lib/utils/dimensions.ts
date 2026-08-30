@@ -21,7 +21,7 @@ export const MIN_HEIGHT_UNITS = 1;
 export function getBoxDimensions(w: number, h: number | 'infinite'): BoxDimensions {
   // Enforce width bounds (min 1, max 4)
   const widthUnits = Math.min(MAX_WIDTH_UNITS, Math.max(MIN_WIDTH_UNITS, w));
-  
+
   const outerWidth = widthUnits * GRID_CELL_WIDTH;
   const innerWidth = outerWidth - INNER_PADDING;
 
@@ -50,10 +50,7 @@ export function getBoxDimensions(w: number, h: number | 'infinite'): BoxDimensio
 /**
  * Default dimensions configuration for all block types
  */
-export const DEFAULT_BLOCK_DIMENSIONS: Record<
-  string,
-  { w: number; h: number | 'infinite' }
-> = {
+export const DEFAULT_BLOCK_DIMENSIONS: Record<string, { w: number; h: number | 'infinite' }> = {
   link: { w: 1, h: 2 },
   image: { w: 1, h: 2 },
   spotify: { w: 2, h: 2 },

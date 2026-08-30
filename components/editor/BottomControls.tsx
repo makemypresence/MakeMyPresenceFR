@@ -21,11 +21,7 @@ export function BottomControls({
       <div className="flex items-center space-x-3 pointer-events-auto max-[425px]:hidden">
         {/* Share Link */}
         <button className="flex items-center space-x-2.5 max-[1025px]:p-3.5 px-6 py-3.5 bg-white hover:bg-zinc-50 border border-[#e1e3e5] rounded-2xl shadow-md cursor-pointer transition-colors text-base font-semibold text-[#191c1e]">
-          <img
-            src="/images/svg/icons/share.svg"
-            alt="Share"
-            className="w-5 h-5"
-          />
+          <img src="/images/svg/icons/share.svg" alt="Share" className="w-5 h-5" />
           <span className="max-[1025px]:hidden">Share my page</span>
         </button>
       </div>
@@ -38,11 +34,7 @@ export function BottomControls({
           className="p-3 hover:bg-zinc-100 rounded-2xl transition-all cursor-pointer"
           title="Add Link"
         >
-          <img
-            src="/images/svg/icons/add-link.svg"
-            alt="Add Link"
-            className="w-6 h-6"
-          />
+          <img src="/images/svg/icons/add-link.svg" alt="Add Link" className="w-6 h-6" />
         </button>
 
         {/* 2. Section Title */}
@@ -51,11 +43,7 @@ export function BottomControls({
           className="p-3 hover:bg-zinc-100 rounded-2xl transition-all cursor-pointer"
           title="Section Title"
         >
-          <img
-            src="/images/svg/icons/section-text.svg"
-            alt="Section Title"
-            className="w-6 h-6"
-          />
+          <img src="/images/svg/icons/section-text.svg" alt="Section Title" className="w-6 h-6" />
         </button>
 
         {/* 3. Text */}
@@ -64,11 +52,7 @@ export function BottomControls({
           className="p-3 hover:bg-zinc-100 rounded-2xl transition-all cursor-pointer"
           title="Text"
         >
-          <img
-            src="/images/svg/icons/text.svg"
-            alt="Text"
-            className="w-6 h-6"
-          />
+          <img src="/images/svg/icons/text.svg" alt="Text" className="w-6 h-6" />
         </button>
 
         {/* 4. Add Image/Video */}
@@ -90,11 +74,7 @@ export function BottomControls({
           className="p-3 hover:bg-zinc-100 rounded-2xl transition-all cursor-pointer"
           title="Add Tiles"
         >
-          <img
-            src="/images/svg/icons/add-tiles.svg"
-            alt="Add Tiles"
-            className="w-6 h-6"
-          />
+          <img src="/images/svg/icons/add-tiles.svg" alt="Add Tiles" className="w-6 h-6" />
         </button>
 
         {/* Divider */}
@@ -107,8 +87,12 @@ export function BottomControls({
           title={viewMode === 'desktop' ? 'Switch to Phone' : 'Switch to Desktop'}
         >
           <img
-            src={viewMode === 'desktop' ? "/images/svg/icons/mobile.svg" : "/images/svg/icons/desktop.svg"}
-            alt={viewMode === 'desktop' ? "Switch to Phone" : "Switch to Desktop"}
+            src={
+              viewMode === 'desktop'
+                ? '/images/svg/icons/mobile.svg'
+                : '/images/svg/icons/desktop.svg'
+            }
+            alt={viewMode === 'desktop' ? 'Switch to Phone' : 'Switch to Desktop'}
             className="w-6 h-6"
           />
         </button>
@@ -126,7 +110,9 @@ export function BottomControls({
             alt="Toggle Suggestions"
             className="w-5 h-5 max-[1025px]:mr-0 mr-1"
           />
-          <span className="max-[1025px]:hidden">{showSuggestions ? 'Remove Suggestions' : 'Show Suggestions'}</span>
+          <span className="max-[1025px]:hidden">
+            {showSuggestions ? 'Remove Suggestions' : 'Show Suggestions'}
+          </span>
         </button>
       </div>
     </footer>

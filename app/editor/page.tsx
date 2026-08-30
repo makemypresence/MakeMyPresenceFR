@@ -57,7 +57,7 @@ export default function EditorPage() {
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   );
 
   useEffect(() => {
@@ -286,7 +286,7 @@ export default function EditorPage() {
     let currentColCount = 0;
 
     other.forEach((b) => {
-      const w = b.type === 'spacer' ? 1 : (b.layout?.desktop?.w || 2);
+      const w = b.type === 'spacer' ? 1 : b.layout?.desktop?.w || 2;
       if (currentColCount < 4) {
         firstRow.push(b);
         currentColCount += w;
@@ -313,7 +313,7 @@ export default function EditorPage() {
     const slots: (BlockDetails | null)[] = [null, null, null, null];
     let colIdx = 0;
     firstRow.forEach((b) => {
-      const w = b.type === 'spacer' ? 1 : (b.layout?.desktop?.w || 2);
+      const w = b.type === 'spacer' ? 1 : b.layout?.desktop?.w || 2;
       slots[colIdx] = b;
       for (let i = 1; i < w; i++) {
         slots[colIdx + i] = b;
@@ -330,7 +330,7 @@ export default function EditorPage() {
     }
 
     if (overwrittenBlocks.size > 0) {
-      overwrittenBlocks.forEach(id => {
+      overwrittenBlocks.forEach((id) => {
         if (!id.startsWith('temp-')) {
           setDeletedBlockIds((prev) => [...prev, id]);
         }
@@ -347,7 +347,7 @@ export default function EditorPage() {
         const originalBlock = slots[i];
         if (originalBlock && !overwrittenBlocks.has(originalBlock.id)) {
           newFirstRow.push(originalBlock);
-          const w = originalBlock.type === 'spacer' ? 1 : (originalBlock.layout?.desktop?.w || 2);
+          const w = originalBlock.type === 'spacer' ? 1 : originalBlock.layout?.desktop?.w || 2;
           i += w;
         } else {
           newFirstRow.push(makeSpacer());
@@ -380,7 +380,7 @@ export default function EditorPage() {
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
             }
-          : b
+          : b,
       );
       return removeEmptyRows(updated);
     });
@@ -388,9 +388,7 @@ export default function EditorPage() {
 
   // Update block properties locally
   const handleUpdateBlock = (blockId: string, updates: Partial<BlockDetails>) => {
-    setBlocks((prev) =>
-      prev.map((b) => (b.id === blockId ? { ...b, ...updates } : b))
-    );
+    setBlocks((prev) => prev.map((b) => (b.id === blockId ? { ...b, ...updates } : b)));
   };
 
   // Duplicate a block and insert it immediately after the original
@@ -431,8 +429,6 @@ export default function EditorPage() {
       viewMode={viewMode}
     />
   );
-
-
 
   // Drag and Drop arrangement handlers using @dnd-kit
   const handleDragStart = (event: any) => {
@@ -475,8 +471,6 @@ export default function EditorPage() {
     // { type: 'youtube', title: 'Add Youtube', colSpan: 'col-span-2' },
   ];
 
-
-
   // Split blocks so the initial title block is rendered above suggestions,
   // and all subsequent created/content blocks are rendered below suggestions.
   const titleBlocks = blocks.length > 0 && blocks[0].type === 'title' ? [blocks[0]] : [];
@@ -484,7 +478,7 @@ export default function EditorPage() {
 
   const getRenderableContent = () => {
     const cols = viewMode === 'mobile' ? 2 : 4;
-    
+
     // We overlay suggestions on the first 4 width units of content
     const suggestionRowWidth = 4;
     const firstRow: BlockDetails[] = [];
@@ -493,7 +487,7 @@ export default function EditorPage() {
 
     otherBlocks.forEach((b) => {
       const rawW = b.layout?.desktop?.w || 2;
-      const w = b.type === 'spacer' ? 1 : (cols === 2 ? Math.min(2, rawW) : rawW);
+      const w = b.type === 'spacer' ? 1 : cols === 2 ? Math.min(2, rawW) : rawW;
       if (currentColCount < suggestionRowWidth) {
         firstRow.push(b);
         currentColCount += w;
@@ -519,7 +513,7 @@ export default function EditorPage() {
     let slotIdx = 0;
     firstRow.forEach((b) => {
       const rawW = b.layout?.desktop?.w || 2;
-      const w = b.type === 'spacer' ? 1 : (cols === 2 ? Math.min(2, rawW) : rawW);
+      const w = b.type === 'spacer' ? 1 : cols === 2 ? Math.min(2, rawW) : rawW;
       slots[slotIdx] = b;
       for (let i = 1; i < w; i++) {
         slots[slotIdx + i] = b;
@@ -554,7 +548,7 @@ export default function EditorPage() {
               title="Add Link"
               colSpan="col-span-1"
               onAdd={(type, title) => handleAddSuggestionBlock(type, title, 0)}
-            />
+            />,
           );
         } else if (slots[0]) {
           renderBlockAt(0, 1);
@@ -563,7 +557,8 @@ export default function EditorPage() {
 
       const blockAt1 = slots[1];
       const blockAt2 = slots[2];
-      const hasRealBlockAt1Or2 = (blockAt1 && blockAt1.type !== 'spacer') || (blockAt2 && blockAt2.type !== 'spacer');
+      const hasRealBlockAt1Or2 =
+        (blockAt1 && blockAt1.type !== 'spacer') || (blockAt2 && blockAt2.type !== 'spacer');
 
       if (hasRealBlockAt1Or2) {
         if (blockAt1 && blockAt1.type !== 'spacer') {
@@ -572,7 +567,11 @@ export default function EditorPage() {
             renderItems.push(renderBlockCard(blockAt1));
           }
         }
-        if (blockAt2 && blockAt2.type !== 'spacer' && (!blockAt1 || blockAt1.layout?.desktop?.w !== 2)) {
+        if (
+          blockAt2 &&
+          blockAt2.type !== 'spacer' &&
+          (!blockAt1 || blockAt1.layout?.desktop?.w !== 2)
+        ) {
           if (!renderedIds.has(blockAt2.id)) {
             renderedIds.add(blockAt2.id);
             renderItems.push(renderBlockCard(blockAt2));
@@ -586,7 +585,7 @@ export default function EditorPage() {
             title="Add Image"
             colSpan="col-span-2"
             onAdd={(type, title) => handleAddSuggestionBlock(type, title, 1)}
-          />
+          />,
         );
       } else {
         if (blockAt1) renderBlockAt(1, 1);
@@ -602,7 +601,7 @@ export default function EditorPage() {
               title="Add Link"
               colSpan="col-span-1"
               onAdd={(type, title) => handleAddSuggestionBlock(type, title, 2)}
-            />
+            />,
           );
         } else if (slots[3]) {
           renderBlockAt(3, 1);
@@ -620,7 +619,7 @@ export default function EditorPage() {
               title="Add Link"
               colSpan="col-span-1"
               onAdd={(type, title) => handleAddSuggestionBlock(type, title, 0)}
-            />
+            />,
           );
         } else if (slots[0]) {
           renderBlockAt(0, 1);
@@ -636,7 +635,7 @@ export default function EditorPage() {
               title="Add Link"
               colSpan="col-span-1"
               onAdd={(type, title) => handleAddSuggestionBlock(type, title, 2)}
-            />
+            />,
           );
         } else if (slots[1]) {
           renderBlockAt(1, 1);
@@ -646,7 +645,8 @@ export default function EditorPage() {
       // Row 2: Image Suggestion 1 (spans cols 0-1)
       const blockAt2 = slots[2];
       const blockAt3 = slots[3];
-      const hasRealBlockAt2Or3 = (blockAt2 && blockAt2.type !== 'spacer') || (blockAt3 && blockAt3.type !== 'spacer');
+      const hasRealBlockAt2Or3 =
+        (blockAt2 && blockAt2.type !== 'spacer') || (blockAt3 && blockAt3.type !== 'spacer');
 
       if (hasRealBlockAt2Or3) {
         if (blockAt2 && blockAt2.type !== 'spacer') {
@@ -655,7 +655,11 @@ export default function EditorPage() {
             renderItems.push(renderBlockCard(blockAt2));
           }
         }
-        if (blockAt3 && blockAt3.type !== 'spacer' && (!blockAt2 || Math.min(2, blockAt2.layout?.desktop?.w || 2) !== 2)) {
+        if (
+          blockAt3 &&
+          blockAt3.type !== 'spacer' &&
+          (!blockAt2 || Math.min(2, blockAt2.layout?.desktop?.w || 2) !== 2)
+        ) {
           if (!renderedIds.has(blockAt3.id)) {
             renderedIds.add(blockAt3.id);
             renderItems.push(renderBlockCard(blockAt3));
@@ -669,7 +673,7 @@ export default function EditorPage() {
             title="Add Image"
             colSpan="col-span-2"
             onAdd={(type, title) => handleAddSuggestionBlock(type, title, 1)}
-          />
+          />,
         );
       } else {
         if (blockAt2) renderBlockAt(2, 1);
@@ -695,10 +699,7 @@ export default function EditorPage() {
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      <SortableContext
-        items={blocks.map((block) => block.id)}
-        strategy={rectSortingStrategy}
-      >
+      <SortableContext items={blocks.map((block) => block.id)} strategy={rectSortingStrategy}>
         {/* 1. Top Title Block (if present) */}
         {titleBlocks.map((block) => renderBlockCard(block))}
 
@@ -707,7 +708,12 @@ export default function EditorPage() {
       </SortableContext>
 
       <DragOverlay>
-        {activeId ? renderBlockCard(blocks.find((b) => b.id === activeId)!, true) : null}
+        {activeId
+          ? renderBlockCard(
+              blocks.find((b) => b.id === activeId)!,
+              true,
+            )
+          : null}
       </DragOverlay>
     </DndContext>
   );
@@ -741,7 +747,7 @@ export default function EditorPage() {
             </div>
 
             {/* Right column: Blocks layout editor */}
-            <div className="flex-1 space-y-6 pb-36 h-full overflow-y-auto pr-2 w-full px-5">
+            <div className="flex-1 space-y-6 pt-4 pb-36 h-full overflow-y-auto pr-2 w-full px-5">
               <div className="grid grid-cols-1 md:grid-cols-[repeat(4,215px)] gap-0 w-full items-start">
                 {renderGridContent()}
               </div>
@@ -761,13 +767,17 @@ export default function EditorPage() {
                   />
                 </div>
                 <div>
-                  <h2 className="text-3xl font-extrabold text-[#191c1e]">{displayName || 'Your name'}</h2>
-                  <p className="text-[15px] text-[#5a626a] mt-1 whitespace-pre-line leading-relaxed">{bio || 'Your bio...'}</p>
+                  <h2 className="text-3xl font-extrabold text-[#191c1e]">
+                    {displayName || 'Your name'}
+                  </h2>
+                  <p className="text-[15px] text-[#5a626a] mt-1 whitespace-pre-line leading-relaxed">
+                    {bio || 'Your bio...'}
+                  </p>
                 </div>
               </div>
 
               {/* Grid Layout inside mockup (constrained to 2 columns!) */}
-              <div className="grid max-[425px]:grid-cols-2 max-[425px]:gap-3 max-[425px]:px-4 grid-cols-[repeat(2,215px)] gap-0 w-full items-start justify-center">
+              <div className="grid pt-2 max-[425px]:grid-cols-2 max-[425px]:gap-3 max-[425px]:px-4 grid-cols-[repeat(2,215px)] gap-0 w-full items-start justify-center">
                 {renderGridContent()}
               </div>
             </div>

@@ -13,14 +13,13 @@ export function TileBlock({ block, dims }: TileBlockProps) {
     <div className="flex items-center px-[10px] w-full justify-start overflow-hidden">
       <div
         style={{
-          height:
-            dims.innerHeight === 'infinite'
-              ? 'auto'
-              : `${dims.innerHeight - 16}px`,
+          height: dims.innerHeight === 'infinite' ? 'auto' : `${dims.innerHeight - 16}px`,
         }}
         className="w-full bg-transparent group-hover:bg-zinc-100 flex items-center px-4 rounded-[14px] transition-colors duration-200"
       >
-        <span className={`font-semibold text-[20px] truncate ${block.title ? 'text-[#191c1e]' : 'text-[#8a9196]'}`}>
+        <span
+          className={`font-semibold text-[20px] truncate ${block.title ? 'text-[#191c1e]' : 'text-[#8a9196]'}`}
+        >
           {block.title || 'Add Tile'}
         </span>
       </div>
