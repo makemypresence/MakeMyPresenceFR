@@ -15,6 +15,7 @@ interface BlockCardProps {
   block: BlockDetails;
   onDelete: (id: string) => void;
   onUpdate?: (id: string, updates: Partial<BlockDetails>) => void;
+  onDuplicate?: (block: BlockDetails) => void;
   isOverlay?: boolean;
   viewMode?: 'desktop' | 'mobile';
 }
@@ -23,6 +24,7 @@ export function BlockCard({
   block,
   onDelete,
   onUpdate,
+  onDuplicate,
   isOverlay = false,
   viewMode = 'desktop',
 }: BlockCardProps) {
@@ -79,6 +81,41 @@ export function BlockCard({
     if (file) {
       const localUrl = URL.createObjectURL(file);
       onUpdate?.(block.id, { image_url: localUrl, title: file.name });
+    }
+  };
+
+  const handleResize = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!onUpdate) return;
+    const currentW = block.layout?.desktop?.w || DEFAULT_BLOCK_DIMENSIONS[block.type]?.w || 2;
+    const currentH = block.layout?.desktop?.h || DEFAULT_BLOCK_DIMENSIONS[block.type]?.h || 2;
+    const hVal = typeof currentH === 'string' ? 2 : currentH;
+    let nextW = currentW;
+    if (block.type === 'link') {
+      nextW = currentW === 1 ? 2 : (currentW === 2 ? 4 : 1);
+    } else if (block.type === 'text' || block.type === 'image') {
+      nextW = currentW === 2 ? 4 : 2;
+    } else if (block.type === 'tile') {
+      nextW = currentW === 1 ? 2 : 1;
+    }
+    onUpdate(block.id, {
+      layout: {
+        desktop: { w: nextW, h: hVal },
+        mobile: { w: nextW, h: hVal },
+      },
+    });
+  };
+
+  const handleDuplicate = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onDuplicate?.(block);
+  };
+
+  const handleEditClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const fileInput = document.getElementById(`file-input-${block.id}`) as HTMLInputElement;
+    if (fileInput) {
+      fileInput.click();
     }
   };
 
@@ -162,9 +199,62 @@ export function BlockCard({
             ) : block.type === 'text' ? (
               <TextBlock block={block} onUpdate={onUpdate} />
             ) : block.type === 'image' ? (
-              <ImageBlock block={block} onUpdate={onUpdate} />
+              <ImageBlock block={block} dims={dims} onUpdate={onUpdate} />
             ) : (
               <TileBlock block={block} dims={dims} />
+            )}
+
+            {/* Floating Options Toolbar (bottom centered) */}
+            {block.type === 'title' ? (
+              <button
+                onClick={handleDuplicate}
+                className="absolute -bottom-5 left-1/2 -translate-x-1/2 bg-white border border-zinc-200 rounded-xl w-[42px] h-[42px] flex items-center justify-center shadow-sm opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-200 z-20 cursor-pointer hover:bg-zinc-50"
+                title="Duplicate Block"
+              >
+                <img
+                  src="/images/svg/icons/duplicate.svg"
+                  alt="Duplicate"
+                  className="w-5 h-5"
+                />
+              </button>
+            ) : (
+              <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 bg-white border border-zinc-200 rounded-2xl px-3 py-1.5 shadow-sm flex flex-row flex-nowrap items-center space-x-1.5 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-200 z-20 whitespace-nowrap w-max min-w-max">
+                {block.type === 'image' && (
+                  <button
+                    onClick={handleEditClick}
+                    className="p-1.5 hover:bg-zinc-50 rounded-lg text-zinc-500 hover:text-black cursor-pointer transition-colors"
+                    title="Edit Image"
+                  >
+                    <img
+                      src="/images/svg/icons/edit.svg"
+                      alt="Edit"
+                      className="w-5 h-5"
+                    />
+                  </button>
+                )}
+                <button
+                  onClick={handleResize}
+                  className="p-1.5 hover:bg-zinc-50 rounded-lg text-zinc-500 hover:text-black cursor-pointer transition-colors"
+                  title="Resize Block"
+                >
+                  <img
+                    src="/images/svg/icons/resize.svg"
+                    alt="Resize"
+                    className="w-5 h-5"
+                  />
+                </button>
+                <button
+                  onClick={handleDuplicate}
+                  className="p-1.5 hover:bg-zinc-50 rounded-lg text-zinc-500 hover:text-black cursor-pointer transition-colors"
+                  title="Duplicate Block"
+                >
+                  <img
+                    src="/images/svg/icons/duplicate.svg"
+                    alt="Duplicate"
+                    className="w-5 h-5"
+                  />
+                </button>
+              </div>
             )}
           </>
         )}
