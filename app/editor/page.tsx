@@ -526,7 +526,7 @@ export default function EditorPage() {
 
     const renderBlockAt = (idx: number, width: number) => {
       const block = slots[idx];
-      if (block && block.type !== 'spacer') {
+      if (block) {
         if (renderedIds.has(block.id)) {
           return true;
         }
@@ -539,8 +539,10 @@ export default function EditorPage() {
 
     if (cols === 4) {
       // 4-COLUMN DESKTOP VIEW SUGGESTIONS
-      if (!renderBlockAt(0, 1)) {
-        if (showSuggestions && activeId === null) {
+      if (showSuggestions && activeId === null) {
+        if (slots[0] && slots[0].type !== 'spacer') {
+          renderBlockAt(0, 1);
+        } else {
           renderItems.push(
             <SuggestionCard
               key="suggest-0"
@@ -550,9 +552,9 @@ export default function EditorPage() {
               onAdd={(type, title) => handleAddSuggestionBlock(type, title, 0)}
             />,
           );
-        } else if (slots[0]) {
-          renderBlockAt(0, 1);
         }
+      } else {
+        renderBlockAt(0, 1);
       }
 
       const blockAt1 = slots[1];
@@ -561,17 +563,13 @@ export default function EditorPage() {
         (blockAt1 && blockAt1.type !== 'spacer') || (blockAt2 && blockAt2.type !== 'spacer');
 
       if (hasRealBlockAt1Or2) {
-        if (blockAt1 && blockAt1.type !== 'spacer') {
+        if (blockAt1) {
           if (!renderedIds.has(blockAt1.id)) {
             renderedIds.add(blockAt1.id);
             renderItems.push(renderBlockCard(blockAt1));
           }
         }
-        if (
-          blockAt2 &&
-          blockAt2.type !== 'spacer' &&
-          (!blockAt1 || blockAt1.layout?.desktop?.w !== 2)
-        ) {
+        if (blockAt2) {
           if (!renderedIds.has(blockAt2.id)) {
             renderedIds.add(blockAt2.id);
             renderItems.push(renderBlockCard(blockAt2));
@@ -592,8 +590,10 @@ export default function EditorPage() {
         if (blockAt2) renderBlockAt(2, 1);
       }
 
-      if (!renderBlockAt(3, 1)) {
-        if (showSuggestions && activeId === null) {
+      if (showSuggestions && activeId === null) {
+        if (slots[3] && slots[3].type !== 'spacer') {
+          renderBlockAt(3, 1);
+        } else {
           renderItems.push(
             <SuggestionCard
               key="suggest-2"
@@ -603,15 +603,16 @@ export default function EditorPage() {
               onAdd={(type, title) => handleAddSuggestionBlock(type, title, 2)}
             />,
           );
-        } else if (slots[3]) {
-          renderBlockAt(3, 1);
         }
+      } else {
+        renderBlockAt(3, 1);
       }
     } else {
       // 2-COLUMN MOBILE VIEW SUGGESTIONS
-      // Row 1: Link Suggestion 0 (col 0) & Link Suggestion 2 (col 1)
-      if (!renderBlockAt(0, 1)) {
-        if (showSuggestions && activeId === null) {
+      if (showSuggestions && activeId === null) {
+        if (slots[0] && slots[0].type !== 'spacer') {
+          renderBlockAt(0, 1);
+        } else {
           renderItems.push(
             <SuggestionCard
               key="suggest-0"
@@ -621,13 +622,15 @@ export default function EditorPage() {
               onAdd={(type, title) => handleAddSuggestionBlock(type, title, 0)}
             />,
           );
-        } else if (slots[0]) {
-          renderBlockAt(0, 1);
         }
+      } else {
+        renderBlockAt(0, 1);
       }
 
-      if (!renderBlockAt(1, 1)) {
-        if (showSuggestions && activeId === null) {
+      if (showSuggestions && activeId === null) {
+        if (slots[1] && slots[1].type !== 'spacer') {
+          renderBlockAt(1, 1);
+        } else {
           renderItems.push(
             <SuggestionCard
               key="suggest-2"
@@ -637,9 +640,9 @@ export default function EditorPage() {
               onAdd={(type, title) => handleAddSuggestionBlock(type, title, 2)}
             />,
           );
-        } else if (slots[1]) {
-          renderBlockAt(1, 1);
         }
+      } else {
+        renderBlockAt(1, 1);
       }
 
       // Row 2: Image Suggestion 1 (spans cols 0-1)
@@ -649,17 +652,13 @@ export default function EditorPage() {
         (blockAt2 && blockAt2.type !== 'spacer') || (blockAt3 && blockAt3.type !== 'spacer');
 
       if (hasRealBlockAt2Or3) {
-        if (blockAt2 && blockAt2.type !== 'spacer') {
+        if (blockAt2) {
           if (!renderedIds.has(blockAt2.id)) {
             renderedIds.add(blockAt2.id);
             renderItems.push(renderBlockCard(blockAt2));
           }
         }
-        if (
-          blockAt3 &&
-          blockAt3.type !== 'spacer' &&
-          (!blockAt2 || Math.min(2, blockAt2.layout?.desktop?.w || 2) !== 2)
-        ) {
+        if (blockAt3) {
           if (!renderedIds.has(blockAt3.id)) {
             renderedIds.add(blockAt3.id);
             renderItems.push(renderBlockCard(blockAt3));

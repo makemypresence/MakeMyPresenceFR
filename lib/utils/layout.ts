@@ -43,13 +43,46 @@ export const removeEmptyRows = (allBlocks: BlockDetails[], cols = 4): BlockDetai
 };
 
 export const fillSpacers = (existingBlocks: BlockDetails[], cols = 4): BlockDetails[] => {
+  const realBlocks = existingBlocks.filter((b) => b.type !== 'spacer');
+  if (realBlocks.length === 0) return [];
+
+  // Sort real blocks by position
+  const sortedRealBlocks = [...realBlocks].sort((a, b) => (a.position || 0) - (b.position || 0));
+
+  // Reconstruct layout slots based on position
+  const maxPos = Math.max(...sortedRealBlocks.map((b) => b.position || 1));
+  const list: (BlockDetails | null)[] = Array(maxPos).fill(null);
+
+  sortedRealBlocks.forEach((block) => {
+    const pos = block.position || 1;
+    list[pos - 1] = block;
+  });
+
+  const reconstructed: BlockDetails[] = [];
+  for (let i = 0; i < list.length; i++) {
+    const item = list[i];
+    if (item) {
+      reconstructed.push(item);
+    } else {
+      reconstructed.push({
+        id: `spacer-${Date.now()}-${Math.random().toString(36).substr(2, 9)}-reconstruct-${i}`,
+        profile_id: sortedRealBlocks[0]?.profile_id || '',
+        type: 'spacer',
+        position: i + 1,
+        layout: {
+          desktop: { w: 1, h: 2 },
+          mobile: { w: 1, h: 2 },
+        },
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
+    }
+  }
+
   const result: BlockDetails[] = [];
   let currentColumn = 0;
 
-  // Filter out any existing spacers first to avoid duplicate spacers
-  const nonSpacers = existingBlocks.filter((b) => b.type !== 'spacer');
-
-  nonSpacers.forEach((block) => {
+  reconstructed.forEach((block) => {
     const rawW = block.layout?.desktop?.w || DEFAULT_BLOCK_DIMENSIONS[block.type]?.w || 2;
     const w = block.type === 'spacer' ? 1 : cols === 2 ? Math.min(2, rawW) : rawW;
 
@@ -59,7 +92,7 @@ export const fillSpacers = (existingBlocks: BlockDetails[], cols = 4): BlockDeta
       for (let k = 0; k < remainingSpace; k++) {
         result.push({
           id: `spacer-${Date.now()}-${Math.random().toString(36).substr(2, 9)}-${k}`,
-          profile_id: '',
+          profile_id: block.profile_id || '',
           type: 'spacer',
           position: result.length + 1,
           layout: {
@@ -86,7 +119,7 @@ export const fillSpacers = (existingBlocks: BlockDetails[], cols = 4): BlockDeta
     for (let k = 0; k < remainingSpace; k++) {
       result.push({
         id: `spacer-${Date.now()}-${Math.random().toString(36).substr(2, 9)}-end-${k}`,
-        profile_id: '',
+        profile_id: sortedRealBlocks[0]?.profile_id || '',
         type: 'spacer',
         position: result.length + 1,
         layout: {
