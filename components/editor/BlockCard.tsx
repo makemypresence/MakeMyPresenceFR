@@ -18,6 +18,7 @@ interface BlockCardProps {
   onDuplicate?: (block: BlockDetails) => void;
   isOverlay?: boolean;
   viewMode?: 'desktop' | 'mobile';
+  gridStyle?: React.CSSProperties;
 }
 
 export function BlockCard({
@@ -27,6 +28,7 @@ export function BlockCard({
   onDuplicate,
   isOverlay = false,
   viewMode = 'desktop',
+  gridStyle,
 }: BlockCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging, over } =
     useSortable({
@@ -61,6 +63,7 @@ export function BlockCard({
 
   // Configure inline styling rules to support 'infinite' (auto-grow) layouts
   const outerStyle = {
+    ...gridStyle,
     height: dims.outerHeight === 'infinite' ? 'auto' : `${dims.outerHeight}px`,
     minHeight: dims.outerHeight === 'infinite' ? '107.5px' : undefined,
     transform: isDragging ? undefined : CSS.Transform.toString(transform),
@@ -174,25 +177,6 @@ export function BlockCard({
   };
 
   const showPlaceholder = isDragging;
-
-  if (block.type === 'spacer') {
-    return (
-      <div
-        ref={setNodeRef}
-        style={outerStyle}
-        className={`relative ${colSpan} group w-full flex items-center justify-center transition-all duration-200 ${
-          isDragging ? 'scale-95 z-20 opacity-50' : ''
-        }`}
-      >
-        <div
-          style={innerStyle}
-          className={`rounded-[14px] p-0 relative flex items-center justify-center transition-all duration-200 w-full h-full max-[425px]:!w-full ${
-            isOver ? 'bg-zinc-100/50' : 'bg-white'
-          }`}
-        />
-      </div>
-    );
-  }
 
   return (
     // Outer Div (flex centered)
