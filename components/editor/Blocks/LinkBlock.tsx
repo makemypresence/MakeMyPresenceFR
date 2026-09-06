@@ -19,7 +19,30 @@ export function LinkBlock({ block, dims, onUpdate, onClick }: LinkBlockProps) {
   const { title, domain, icon_url: iconUrl, preview_url: previewUrl, preview_large_url: previewLargeUrl } =
     getNormalizedLinkMetadata(block);
 
-  // Layout 1: Small / Square block (w === 1) -> 2.png
+  // Layout 1: Any Width & Min Height (h === 1) -> Icon leftmost, Title right of icon
+  if (h === 1) {
+    return (
+      <div
+        onClick={onClick}
+        className="w-full h-full px-4 py-2 flex flex-row items-center space-x-3 overflow-hidden bg-[#e8ecef] rounded-[14px] cursor-pointer group transition-colors select-none"
+      >
+        <div className="shrink-0">
+          <img
+            src={iconUrl}
+            alt={title}
+            className="w-[34px] h-[34px] rounded-xl object-cover shadow-sm border border-black/5"
+          />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-[#191c1e] text-[14px] md:text-[15px] truncate leading-tight">
+            {title}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Layout 1b: 1 Width & Square/Tall Height (w === 1 && h >= 2) -> 2.png
   if (w === 1) {
     return (
       <div
