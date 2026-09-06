@@ -16,8 +16,10 @@ interface BlockCardProps {
   onDelete: (id: string) => void;
   onUpdate?: (id: string, updates: Partial<BlockDetails>) => void;
   onDuplicate?: (block: BlockDetails) => void;
+  onSelectBlock?: (block: BlockDetails) => void;
   isOverlay?: boolean;
   viewMode?: 'desktop' | 'mobile';
+  gridStyle?: React.CSSProperties;
 }
 
 export function BlockCard({
@@ -25,8 +27,10 @@ export function BlockCard({
   onDelete,
   onUpdate,
   onDuplicate,
+  onSelectBlock,
   isOverlay = false,
   viewMode = 'desktop',
+  gridStyle,
 }: BlockCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging, over } =
     useSortable({
@@ -61,6 +65,7 @@ export function BlockCard({
 
   // Configure inline styling rules to support 'infinite' (auto-grow) layouts
   const outerStyle = {
+    ...gridStyle,
     height: dims.outerHeight === 'infinite' ? 'auto' : `${dims.outerHeight}px`,
     minHeight: dims.outerHeight === 'infinite' ? '107.5px' : undefined,
     transform: isDragging ? undefined : CSS.Transform.toString(transform),
@@ -71,6 +76,7 @@ export function BlockCard({
     width: `${dims.innerWidth}px`,
     height: dims.innerHeight === 'infinite' ? 'auto' : `${dims.innerHeight}px`,
     minHeight: dims.innerHeight === 'infinite' ? '67.5px' : undefined,
+    transition: 'width 0.3s cubic-bezier(0.2, 0, 0, 1), height 0.3s cubic-bezier(0.2, 0, 0, 1)',
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -174,25 +180,6 @@ export function BlockCard({
 
   const showPlaceholder = isDragging;
 
-  if (block.type === 'spacer') {
-    return (
-      <div
-        ref={setNodeRef}
-        style={outerStyle}
-        className={`relative ${colSpan} group w-full flex items-center justify-center transition-all duration-200 ${
-          isDragging ? 'scale-95 z-20 opacity-50' : ''
-        }`}
-      >
-        <div
-          style={innerStyle}
-          className={`rounded-[14px] p-0 relative flex items-center justify-center transition-all duration-200 w-full h-full max-[425px]:!w-full ${
-            isOver ? 'bg-zinc-100/50' : 'bg-white'
-          }`}
-        />
-      </div>
-    );
-  }
-
   return (
     // Outer Div (flex centered)
     <div
@@ -232,6 +219,18 @@ export function BlockCard({
         </div>
       )}
 
+      {/* Enlarge / Resize Placeholder */}
+      {!showPlaceholder && (
+        <div
+          style={{
+            width: `${dims.innerWidth}px`,
+            height: dims.innerHeight === 'infinite' ? 'auto' : `${dims.innerHeight}px`,
+            minHeight: dims.innerHeight === 'infinite' ? '67.5px' : undefined,
+          }}
+          className="absolute rounded-[14px] bg-zinc-100/60 border border-zinc-200/50 pointer-events-none z-0"
+        />
+      )}
+
       <div
         style={innerStyle}
         className={`rounded-[14px] p-0 relative flex items-center justify-center transition-all duration-200 border w-full h-full max-[425px]:!w-full ${
@@ -245,7 +244,11 @@ export function BlockCard({
             {/* Delete Button (Placed inside Inner Div, relative to it) */}
             <button
               onClick={() => onDelete(block.id)}
-              className="absolute -top-2.5 -left-2.5 p-[10px] bg-white hover:bg-zinc-50 text-zinc-400 hover:text-black rounded-full border border-zinc-200 shadow-sm opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-200 cursor-pointer z-10"
+              className={`absolute -top-2.5 -left-2.5 p-[10px] bg-white hover:bg-zinc-50 text-zinc-400 hover:text-black rounded-full border border-zinc-200 shadow-sm transition-opacity duration-200 cursor-pointer z-10 ${
+                isResizing
+                  ? 'opacity-0 pointer-events-none'
+                  : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto'
+              }`}
               title="Delete Block"
             >
               <img src="/images/svg/icons/trash.svg" alt="Delete Block" className="w-5 h-5" />
@@ -255,7 +258,11 @@ export function BlockCard({
             <div
               {...attributes}
               {...listeners}
-              className="absolute -top-2.5 -right-2.5 p-[10px] bg-white hover:bg-zinc-50 text-zinc-400 hover:text-black rounded-full border border-zinc-200 shadow-sm opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-200 cursor-grab active:cursor-grabbing z-10 flex items-center justify-center w-[42px] h-[42px]"
+              className={`absolute -top-2.5 -right-2.5 p-[10px] bg-white hover:bg-zinc-50 text-zinc-400 hover:text-black rounded-full border border-zinc-200 shadow-sm transition-opacity duration-200 cursor-grab active:cursor-grabbing z-10 flex items-center justify-center w-[42px] h-[42px] ${
+                isResizing
+                  ? 'opacity-0 pointer-events-none'
+                  : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto'
+              }`}
               title="Drag to Reorder"
             >
               <svg
@@ -278,9 +285,14 @@ export function BlockCard({
             {block.type === 'title' ? (
               <TitleBlock block={block} dims={dims} onUpdate={onUpdate} />
             ) : block.type === 'link' ? (
-              <LinkBlock block={block} dims={dims} onUpdate={onUpdate} />
+              <LinkBlock
+                block={block}
+                dims={dims}
+                onUpdate={onUpdate}
+                onClick={() => onSelectBlock?.(block)}
+              />
             ) : block.type === 'text' ? (
-              <TextBlock block={block} onUpdate={onUpdate} />
+              <TextBlock block={block} dims={dims} onUpdate={onUpdate} />
             ) : block.type === 'image' ? (
               <ImageBlock block={block} dims={dims} onUpdate={onUpdate} />
             ) : (
@@ -291,13 +303,23 @@ export function BlockCard({
             {block.type === 'title' ? (
               <button
                 onClick={handleDuplicate}
-                className="absolute -bottom-5 left-1/2 -translate-x-1/2 bg-white border border-zinc-200 rounded-xl w-[42px] h-[42px] flex items-center justify-center shadow-sm opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-200 z-20 cursor-pointer hover:bg-zinc-50"
+                className={`absolute -bottom-5 left-1/2 -translate-x-1/2 bg-white border border-zinc-200 rounded-xl w-[42px] h-[42px] flex items-center justify-center shadow-sm transition-opacity duration-200 z-20 cursor-pointer hover:bg-zinc-50 ${
+                  isResizing
+                    ? 'opacity-0 pointer-events-none'
+                    : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto'
+                }`}
                 title="Duplicate Block"
               >
                 <img src="/images/svg/icons/duplicate.svg" alt="Duplicate" className="w-5 h-5" />
               </button>
             ) : (
-              <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 bg-white border border-zinc-200 rounded-2xl px-3 py-1.5 shadow-sm flex flex-row flex-nowrap items-center space-x-1.5 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-200 z-20 whitespace-nowrap w-max min-w-max">
+              <div
+                className={`absolute -bottom-5 left-1/2 -translate-x-1/2 bg-white border border-zinc-200 rounded-2xl px-3 py-1.5 shadow-sm flex flex-row flex-nowrap items-center space-x-1.5 transition-opacity duration-200 z-20 whitespace-nowrap w-max min-w-max ${
+                  isResizing
+                    ? 'opacity-0 pointer-events-none'
+                    : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto'
+                }`}
+              >
                 {block.type === 'image' && (
                   <button
                     onClick={handleEditClick}
