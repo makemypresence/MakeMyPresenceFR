@@ -16,6 +16,7 @@ interface BlockCardProps {
   onDelete: (id: string) => void;
   onUpdate?: (id: string, updates: Partial<BlockDetails>) => void;
   onDuplicate?: (block: BlockDetails) => void;
+  onSelectBlock?: (block: BlockDetails) => void;
   isOverlay?: boolean;
   viewMode?: 'desktop' | 'mobile';
   gridStyle?: React.CSSProperties;
@@ -26,6 +27,7 @@ export function BlockCard({
   onDelete,
   onUpdate,
   onDuplicate,
+  onSelectBlock,
   isOverlay = false,
   viewMode = 'desktop',
   gridStyle,
@@ -283,7 +285,12 @@ export function BlockCard({
             {block.type === 'title' ? (
               <TitleBlock block={block} dims={dims} onUpdate={onUpdate} />
             ) : block.type === 'link' ? (
-              <LinkBlock block={block} dims={dims} onUpdate={onUpdate} />
+              <LinkBlock
+                block={block}
+                dims={dims}
+                onUpdate={onUpdate}
+                onClick={() => onSelectBlock?.(block)}
+              />
             ) : block.type === 'text' ? (
               <TextBlock block={block} dims={dims} onUpdate={onUpdate} />
             ) : block.type === 'image' ? (

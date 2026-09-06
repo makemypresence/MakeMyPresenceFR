@@ -23,6 +23,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { profileService, ProfileDetails } from '../../lib/services/profile';
 import { blockService, BlockDetails } from '../../lib/services/block';
+import { fetchLinkMetadata } from '../../lib/data/linkData';
 import { EditorHeader } from '../../components/editor/EditorHeader';
 import { ProfileEditor } from '../../components/editor/ProfileEditor';
 import { BlockCard } from '../../components/editor/BlockCard';
@@ -53,6 +54,11 @@ export default function EditorPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [deletedBlockIds, setDeletedBlockIds] = useState<string[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
+
+  // Link input popover state
+  const [isLinkInputOpen, setIsLinkInputOpen] = useState(false);
+  const [linkInputValue, setLinkInputValue] = useState('');
+  const [editingLinkId, setEditingLinkId] = useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -227,7 +233,79 @@ export default function EditorPage() {
   };
 
   // Add block locally with a temporary ID
+  const handleToggleLinkInput = () => {
+    setIsLinkInputOpen((prev) => {
+      if (!prev) {
+        setEditingLinkId(null);
+        setLinkInputValue('');
+      }
+      return !prev;
+    });
+  };
+
+  const handleSelectBlock = (block: BlockDetails) => {
+    if (block.type === 'link') {
+      setEditingLinkId(block.id);
+      setLinkInputValue(block.url || '');
+      setIsLinkInputOpen(true);
+    }
+  };
+
+  const handleSubmitLink = async (inputUrl: string) => {
+    if (!profile) return;
+
+    const metadata = await fetchLinkMetadata(inputUrl);
+
+    if (editingLinkId) {
+      handleUpdateBlock(editingLinkId, {
+        url: metadata.url,
+        title: metadata.title,
+        image_url: metadata.preview_url,
+        block_metadata: {
+          domain: metadata.domain,
+          icon_url: metadata.icon_url,
+          preview_url: metadata.preview_url,
+          preview_large_url: metadata.preview_large_url,
+        },
+      });
+      setEditingLinkId(null);
+    } else {
+      const defaultDim = DEFAULT_BLOCK_DIMENSIONS['link'] || { w: 1, h: 2 };
+      const hVal = defaultDim.h === 'infinite' ? 2 : defaultDim.h;
+
+      const tempBlock: BlockDetails = {
+        id: `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        profile_id: profile.id,
+        type: 'link',
+        title: metadata.title,
+        url: metadata.url,
+        image_url: metadata.preview_url,
+        block_metadata: {
+          domain: metadata.domain,
+          icon_url: metadata.icon_url,
+          preview_url: metadata.preview_url,
+          preview_large_url: metadata.preview_large_url,
+        },
+        position: blocks.length + 1,
+        layout: {
+          desktop: { w: defaultDim.w, h: hVal },
+          mobile: { w: defaultDim.w, h: hVal },
+        },
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      setBlocks((prev) => [...prev, tempBlock]);
+    }
+
+    setIsLinkInputOpen(false);
+    setLinkInputValue('');
+  };
+
   const handleAddBlock = (type: string, title: string) => {
+    if (type === 'link') {
+      handleToggleLinkInput();
+      return;
+    }
     if (!profile) return;
     const defaultDim = DEFAULT_BLOCK_DIMENSIONS[type] || { w: 2, h: 2 };
     const hVal = defaultDim.h === 'infinite' ? 2 : defaultDim.h;
@@ -331,6 +409,7 @@ export default function EditorPage() {
       onDelete={handleDeleteBlock}
       onUpdate={handleUpdateBlock}
       onDuplicate={handleDuplicateBlock}
+      onSelectBlock={handleSelectBlock}
       isOverlay={isOverlay}
       viewMode={viewMode}
       gridStyle={gridStyle}
@@ -453,6 +532,11 @@ export default function EditorPage() {
         onAddBlock={handleAddBlock}
         viewMode={viewMode}
         onToggleViewMode={() => setViewMode((prev) => (prev === 'desktop' ? 'mobile' : 'desktop'))}
+        isLinkInputOpen={isLinkInputOpen}
+        onToggleLinkInput={handleToggleLinkInput}
+        onSubmitLink={handleSubmitLink}
+        linkInputValue={linkInputValue}
+        onLinkInputChange={setLinkInputValue}
       />
     </main>
   );
